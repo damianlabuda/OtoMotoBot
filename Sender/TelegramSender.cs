@@ -1,10 +1,5 @@
 ﻿using Shared.Models;
-using System;
-using System.Collections.Generic;
 using System.Diagnostics;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using Telegram.Bot;
 using Telegram.Bot.Types;
 using User = Shared.Entities.User;
@@ -14,11 +9,16 @@ namespace Sender
     public class TelegramSender
     {
         private readonly List<User> _users;
+
         private readonly List<NewAdMessage> _newAdMessages;
+
         private readonly IServiceScopeFactory _iServiceScopeFactory;
+
         private readonly SemaphoreSlim _semaphoreSlim = new SemaphoreSlim(10, 10);
+
         private int MessagesSendCounter { get; set; } = 0;
-        private readonly object obj;
+
+        private readonly object obj = new object();
 
         public TelegramSender(List<User> users, List<NewAdMessage> newAdMessages, IServiceScopeFactory iServiceScopeFactory)
         {

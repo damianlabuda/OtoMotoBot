@@ -1,4 +1,5 @@
 using Microsoft.EntityFrameworkCore;
+using Newtonsoft.Json;
 using Shared.Entities;
 using Shared.Models;
 
@@ -41,13 +42,17 @@ namespace Scraper
                 var searchInDb = new SearchInDb(_serviceScopeFactory);
                 var newAdMessages = await searchInDb.Check(adLinks);
 
-                if (newAdMessages.Any() && searchLink.SearchCount > 0)
+                if (newAdMessages.Any() /*&& searchLink.SearchCount > 0*/)
                 {
                     MessagesToSent messagesToSent = new MessagesToSent()
                     {
                         NewAdMessages = newAdMessages,
-                        Users = searchLink.Users
+                        Users = searchLink.Users.Select(x => new User{ TelegramChatId = x.TelegramChatId }).ToList<User>()
                     };
+
+                    var json = JsonConvert.SerializeObject(messagesToSent);
+
+                    Console.WriteLine(json);
                 }
             }
         }

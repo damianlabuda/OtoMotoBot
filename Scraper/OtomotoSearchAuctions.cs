@@ -1,16 +1,11 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Diagnostics;
-using System.Linq;
-using System.Net;
-using System.Text;
-using System.Text.RegularExpressions;
-using System.Threading.Tasks;
-using System.Web;
-using Newtonsoft.Json;
+﻿using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using Shared.Entities;
 using Shared.Models.SearchLinkStructure;
+using System.Diagnostics;
+using System.Net;
+using System.Text.RegularExpressions;
+using System.Web;
 
 namespace Scraper
 {
