@@ -70,12 +70,13 @@ namespace Scraper
                         var searchInDb = new SearchInDb(_serviceScopeFactory);
                         var newAdMessages = await searchInDb.Check(adLinks);
 
-                        if (newAdMessages.Any() /*&& searchLink.SearchCount > 0*/)
+                        if (newAdMessages.Any() && searchLink.SearchCount > 0)
                         {
                             MessagesToSent messagesToSent = new MessagesToSent()
                             {
                                 NewAdMessages = newAdMessages,
-                                Users = searchLink.Users.Select(x => new User { TelegramChatId = x.TelegramChatId }).ToList<User>()
+                                //Users = searchLink.Users.Select(x => new User { TelegramChatId = x.TelegramChatId }).ToList<User>()
+                                Users = searchLink.Users
                             };
 
                             var jsonMessagesToSent = JsonConvert.SerializeObject(messagesToSent);

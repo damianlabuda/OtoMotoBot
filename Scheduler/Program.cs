@@ -7,6 +7,7 @@ using System.Threading.Tasks;
 using Coravel;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
+using Newtonsoft.Json;
 using Shared.Entities;
 
 namespace Scheduler
@@ -21,6 +22,7 @@ namespace Scheduler
             {
                 var jobShedule = sheduler.Schedule<Worker>();
                 jobShedule.EveryFiveMinutes();
+                //jobShedule.EveryMinute();
             });
 
             await host.RunAsync();
