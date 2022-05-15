@@ -18,8 +18,8 @@ namespace Sender
 
         private int MessagesSendCounter { get; set; } = 0;
 
-        private readonly object obj = new object();
-
+        private readonly object _obj = new object();
+        
         public TelegramSender(List<User> users, List<NewAdMessage> newAdMessages, IServiceScopeFactory iServiceScopeFactory)
         {
             _users = users;
@@ -27,7 +27,7 @@ namespace Sender
             _iServiceScopeFactory = iServiceScopeFactory;
         }
 
-        public async Task SendsAsync()
+        public async Task<string> SendsAsync()
         {
             Stopwatch stopwatch = Stopwatch.StartNew();
 
@@ -37,10 +37,10 @@ namespace Sender
 
             stopwatch.Stop();
 
-            Console.WriteLine($"Wysłano: {MessagesSendCounter} nowych wiadomości," +
-                              $" z: {_newAdMessages.Count * _users.Count} zaplanowanych," +
-                              $" dla {_users.Count} użytkowników," +
-                              $" czas: {stopwatch.Elapsed}");
+            return $"Wysłano: {MessagesSendCounter} nowych wiadomości," +
+                   $" z {_newAdMessages.Count * _users.Count} zaplanowanych," +
+                   $" dla {_users.Count} użytkowników," +
+                   $" czas {stopwatch.Elapsed}";
         }
 
         private async Task SendMessagesAsync(User user)
@@ -57,12 +57,12 @@ namespace Sender
                     foreach (NewAdMessage newAdMessage in _newAdMessages)
                     {
                         string text = newAdMessage.PriceBefore == 0 
-                            ? $"Nowe ogłoszenie:\n{newAdMessage.Link}" 
-                            : $"Zmiana ceny z: {newAdMessage.PriceBefore} na: {newAdMessage.Price}\n{newAdMessage.Link}";
+                            ? $"Nowe ogłoszenie\n{newAdMessage.Link}" 
+                            : $"Zmiana ceny z {newAdMessage.PriceBefore}, na {newAdMessage.Price}\n{newAdMessage.Link}";
 
                         await telegramClient.SendTextMessageAsync(new ChatId((long)user.TelegramChatId), text);
 
-                        lock (obj)
+                        lock (_obj)
                             MessagesSendCounter++;
                     }
                 }

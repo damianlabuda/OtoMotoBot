@@ -5,10 +5,6 @@ using Shared.Entities;
 IHost host = Host.CreateDefaultBuilder(args)
     .ConfigureServices((hostContext, services) =>
     {
-        //services.AddDbContext<OtoMotoContext>(options =>
-        //    options.UseSqlServer(hostContext.Configuration.GetConnectionString("OtoMotoTestConnectionString"))
-        //);
-
         var optionsBuilder = new DbContextOptionsBuilder<OtoMotoContext>();
         optionsBuilder.UseSqlServer(hostContext.Configuration.GetConnectionString("OtoMotoTestConnectionString"));
         services.AddScoped<OtoMotoContext>(x => new OtoMotoContext(optionsBuilder.Options));
@@ -28,14 +24,11 @@ IHost host = Host.CreateDefaultBuilder(args)
             options.DefaultRequestHeaders.Add("Sec-Fetch-Dest", "document");
             options.DefaultRequestHeaders.Add("Accept-Encoding", "gzip, deflate");
             options.DefaultRequestHeaders.Add("Accept-Language", "pl-PL,pl;q=0.9,en-US;q=0.8,en;q=0.7");
-        }).ConfigurePrimaryHttpMessageHandler(() =>
+        }).ConfigurePrimaryHttpMessageHandler(() => new HttpClientHandler()
         {
-            return new HttpClientHandler()
-            {
-                //Proxy = new WebProxy("http://127.0.0.1:8080"),
-                //UseProxy = true,
-                UseCookies = false
-            };
+            //Proxy = new WebProxy("http://127.0.0.1:8080"),
+            //UseProxy = true,
+            UseCookies = false
         });
 
         services.AddHostedService<Worker>();
