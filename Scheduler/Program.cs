@@ -22,7 +22,6 @@ namespace Scheduler
             {
                 var jobShedule = sheduler.Schedule<Worker>();
                 jobShedule.EveryFiveMinutes();
-                //jobShedule.EveryMinute();
             });
 
             await host.RunAsync();
@@ -32,7 +31,7 @@ namespace Scheduler
             Host.CreateDefaultBuilder(args)
                 .ConfigureServices((hostContext, services) =>
                 {
-                    services.AddDbContext<OtoMotoContext>(options =>
+                    services.AddDbContext<OtomotoSearchAuctions>(options =>
                         options.UseSqlServer(hostContext.Configuration.GetConnectionString("OtoMotoTestConnectionString")));
 
                     services.AddScheduler();

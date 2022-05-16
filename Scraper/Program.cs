@@ -1,13 +1,12 @@
 using Microsoft.EntityFrameworkCore;
 using Scraper;
-using Shared.Entities;
 
 IHost host = Host.CreateDefaultBuilder(args)
     .ConfigureServices((hostContext, services) =>
     {
-        var optionsBuilder = new DbContextOptionsBuilder<OtoMotoContext>();
+        var optionsBuilder = new DbContextOptionsBuilder<Shared.Entities.OtomotoSearchAuctions>();
         optionsBuilder.UseSqlServer(hostContext.Configuration.GetConnectionString("OtoMotoTestConnectionString"));
-        services.AddScoped<OtoMotoContext>(x => new OtoMotoContext(optionsBuilder.Options));
+        services.AddScoped(x => new Shared.Entities.OtomotoSearchAuctions(optionsBuilder.Options));
 
         services.AddHttpClient<IOtoMotoHttpClient, OtoMotoHttpClient>(options =>
         {

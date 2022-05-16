@@ -15,7 +15,7 @@ namespace Scraper
         {
             using (var scope = _iServiceScopeFactory.CreateScope())
             {
-                var context = scope.ServiceProvider.GetRequiredService<OtoMotoContext>();
+                var context = scope.ServiceProvider.GetRequiredService<Shared.Entities.OtomotoSearchAuctions>();
 
                 if (context.Database.CanConnect())
                 {

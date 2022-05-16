@@ -75,7 +75,6 @@ namespace Scraper
                             MessagesToSent messagesToSent = new MessagesToSent()
                             {
                                 NewAdMessages = newAdMessages,
-                                //Users = searchLink.Users.Select(x => new User { TelegramChatId = x.TelegramChatId }).ToList<User>()
                                 Users = searchLink.Users
                             };
 

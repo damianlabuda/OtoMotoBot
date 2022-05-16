@@ -33,7 +33,7 @@ namespace Scraper
 
             stopwatch.Stop();
 
-            Console.WriteLine($"{NewRecords} nowych rekordów, {UpdatedPriceRecords} zmian cen, czas: {stopwatch.Elapsed}");
+            Console.WriteLine($"{DateTime.Now} - {NewRecords} nowych rekordów, {UpdatedPriceRecords} zmian cen, czas: {stopwatch.Elapsed}");
 
             return _newAdMessages;
         }
@@ -46,7 +46,7 @@ namespace Scraper
             {
                 using (var scopeDb = _serviceScopeFactory.CreateScope())
                 {
-                    var otoMotoContext = scopeDb.ServiceProvider.GetRequiredService<OtoMotoContext>();
+                    var otoMotoContext = scopeDb.ServiceProvider.GetRequiredService<Shared.Entities.OtomotoSearchAuctions>();
 
                     var adLinkFromDb = await otoMotoContext.AdLinks.FirstOrDefaultAsync(x => x.Link == adLink.Link);
 

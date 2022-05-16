@@ -22,7 +22,9 @@ namespace Scraper
         private readonly LinkVariables _variables = new LinkVariables();
 
         private readonly SemaphoreSlim _semaphoreSlim = new SemaphoreSlim(10, 10);
+
         private int _totalPages { get; set; } = 0;
+
         private int _totalCount { get; set; } = 0;
 
         public OtomotoSearchAuctions(SearchLink searchLink, IOtoMotoHttpClient otoMotoHttpClient)
@@ -30,6 +32,7 @@ namespace Scraper
             _searchLink = searchLink;
             _otoMotoHttpClient = otoMotoHttpClient;
         }
+
         public async Task<List<AdLink>> Search()
         {
             Stopwatch stopwatch = Stopwatch.StartNew();
@@ -50,7 +53,7 @@ namespace Scraper
             }
 
             stopwatch.Stop();
-            Console.WriteLine($"Znaleziono: {_adLinks.Count} z {_totalCount} rekordów, dla: {_searchLink.Link}, czas: {stopwatch.Elapsed}");
+            Console.WriteLine($"{DateTime.Now} - Znaleziono: {_adLinks.Count} z {_totalCount} rekordów, dla: {_searchLink.Link}, czas: {stopwatch.Elapsed}");
 
             return _adLinks;
         }

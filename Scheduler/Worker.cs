@@ -1,18 +1,14 @@
-using Microsoft.Extensions.Hosting;
-using Microsoft.Extensions.Logging;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text.Json.Serialization;
-using System.Threading;
-using System.Threading.Tasks;
 using Coravel.Invocable;
 using Microsoft.EntityFrameworkCore;
-using RabbitMQ.Client;
-using Shared.Entities;
+using Microsoft.Extensions.Logging;
 using Newtonsoft.Json;
-using System.Text;
+using RabbitMQ.Client;
 using RabbitMQ.Client.Exceptions;
+using Shared.Entities;
+using System;
+using System.Linq;
+using System.Text;
+using System.Threading.Tasks;
 
 namespace Scheduler
 {
@@ -20,9 +16,9 @@ namespace Scheduler
     {
         private readonly ILogger<Worker> _logger;
 
-        private readonly OtoMotoContext _dbOtoMotoContext;
+        private readonly OtomotoSearchAuctions _dbOtoMotoContext;
 
-        public Worker(ILogger<Worker> logger, OtoMotoContext dbOtoMotoContext)
+        public Worker(ILogger<Worker> logger, OtomotoSearchAuctions dbOtoMotoContext)
         {
             _logger = logger;
             _dbOtoMotoContext = dbOtoMotoContext;
@@ -70,7 +66,7 @@ namespace Scheduler
 
                         searchLink.SearchCount++;
 
-                        _logger.LogInformation($"Dodano link wyszukiwania do kolejki: {searchLink.Link}");
+                        _logger.LogInformation($"{DateTime.Now} - Dodano link wyszukiwania do kolejki: {searchLink.Link}");
                     }
                 }
 

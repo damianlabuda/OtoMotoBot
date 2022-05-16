@@ -37,7 +37,7 @@ namespace Sender
 
             stopwatch.Stop();
 
-            return $"Wysłano: {MessagesSendCounter} nowych wiadomości," +
+            return $"{DateTime.Now} - Wysłano: {MessagesSendCounter} nowych wiadomości," +
                    $" z {_newAdMessages.Count * _users.Count} zaplanowanych," +
                    $" dla {_users.Count} użytkowników," +
                    $" czas {stopwatch.Elapsed}";
