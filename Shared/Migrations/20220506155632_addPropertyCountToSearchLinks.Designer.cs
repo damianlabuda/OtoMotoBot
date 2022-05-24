@@ -11,7 +11,7 @@ using Shared.Entities;
 
 namespace Shared.Migrations
 {
-    [DbContext(typeof(OtomotoSearchAuctions))]
+    [DbContext(typeof(OtoMotoContext))]
     [Migration("20220506155632_addPropertyCountToSearchLinks")]
     partial class addPropertyCountToSearchLinks
     {

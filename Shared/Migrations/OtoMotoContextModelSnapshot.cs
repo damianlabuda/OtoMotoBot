@@ -10,7 +10,7 @@ using Shared.Entities;
 
 namespace Shared.Migrations
 {
-    [DbContext(typeof(OtomotoSearchAuctions))]
+    [DbContext(typeof(OtoMotoContext))]
     partial class OtoMotoContextModelSnapshot : ModelSnapshot
     {
         protected override void BuildModel(ModelBuilder modelBuilder)

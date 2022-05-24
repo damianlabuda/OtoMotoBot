@@ -11,7 +11,7 @@ using Shared.Entities;
 
 namespace Shared.Migrations
 {
-    [DbContext(typeof(OtomotoSearchAuctions))]
+    [DbContext(typeof(OtoMotoContext))]
     [Migration("20220505194246_Test")]
     partial class Test
     {

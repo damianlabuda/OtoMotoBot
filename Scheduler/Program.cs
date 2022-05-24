@@ -31,7 +31,7 @@ namespace Scheduler
             Host.CreateDefaultBuilder(args)
                 .ConfigureServices((hostContext, services) =>
                 {
-                    services.AddDbContext<OtomotoSearchAuctions>(options =>
+                    services.AddDbContext<OtoMotoContext>(options =>
                         options.UseSqlServer(hostContext.Configuration.GetConnectionString("OtoMotoTestConnectionString")));
 
                     services.AddScheduler();

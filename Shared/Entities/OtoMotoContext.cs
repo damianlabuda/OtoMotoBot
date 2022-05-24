@@ -2,9 +2,9 @@
 
 namespace Shared.Entities
 {
-    public class OtomotoSearchAuctions : DbContext
+    public class OtoMotoContext : DbContext
     {
-        public OtomotoSearchAuctions(DbContextOptions<OtomotoSearchAuctions> options) : base(options)
+        public OtoMotoContext(DbContextOptions<OtoMotoContext> options) : base(options)
         {
             
         }
