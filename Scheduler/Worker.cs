@@ -16,9 +16,9 @@ namespace Scheduler
     {
         private readonly ILogger<Worker> _logger;
 
-        private readonly OtomotoSearchAuctions _dbOtoMotoContext;
+        private readonly OtoMotoContext _dbOtoMotoContext;
 
-        public Worker(ILogger<Worker> logger, OtomotoSearchAuctions dbOtoMotoContext)
+        public Worker(ILogger<Worker> logger, OtoMotoContext dbOtoMotoContext)
         {
             _logger = logger;
             _dbOtoMotoContext = dbOtoMotoContext;

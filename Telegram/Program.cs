@@ -1,7 +1,10 @@
 using Microsoft.EntityFrameworkCore;
+using Redis.OM;
 using Telegram.Services;
 using Shared.Entities;
 using Telegram;
+using Telegram.Commands;
+using Telegram.HostedServices;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -13,7 +16,13 @@ builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 builder.Services.AddSingleton<TelegramBot>();
 builder.Services.AddScoped<ITelegramBotService, TelegramBotService>();
-builder.Services.AddScoped<ICommandExecutorServices, CommandExecutorServices>();
+builder.Services.AddScoped<ICommandExecutorServices, CommandExecutorService>();
+builder.Services.AddScoped<IUserService, UserService>();
+builder.Services.AddScoped<BaseCommand, DefaultCommand>();
+builder.Services.AddScoped<BaseCommand, AddLinkCommand>();
+builder.Services.AddScoped<BaseCommand, ShowMyLinksCommand>();
+builder.Services.AddSingleton(new RedisConnectionProvider(builder.Configuration.GetConnectionString("Redis")));
+builder.Services.AddHostedService<IndexCreationServices>();
 
 builder.Services.AddDbContext<OtoMotoContext>(options =>
     options.UseSqlServer(builder.Configuration.GetConnectionString("OtoMotoTestConnectionString")));
