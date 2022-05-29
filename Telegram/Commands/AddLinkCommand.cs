@@ -6,7 +6,6 @@ using Shared.Models;
 using Telegram.Bot;
 using Telegram.Bot.Types;
 using Telegram.Bot.Types.Enums;
-using Telegram.Bot.Types.InlineQueryResults;
 using Telegram.Bot.Types.ReplyMarkups;
 using Telegram.Services;
 using User = Shared.Entities.User;
@@ -18,58 +17,67 @@ namespace Telegram.Commands
         private readonly TelegramBotClient _telegramBot;
         private readonly OtoMotoContext _otoMotoContext;
         private readonly IUserService _userService;
-        private readonly IRedisCollection<TelegramCurrentAction> _currentActions;
+        private readonly RedisConnectionProvider _redis;
+        private readonly IRedisCollection<TelegramCurrentAction> _currentRedisActions;
         private string _link;
         private long _chatId;
-        private readonly ReplyKeyboardMarkup _keyboardButtonBack = new(new[]
+        private readonly InlineKeyboardMarkup _inlineKeyboard = new InlineKeyboardMarkup(new[]
         {
-            new KeyboardButton[] { "Cofnij" },
-        })
-        {
-            ResizeKeyboard = true
-        };
+            new []
+            {
+                new InlineKeyboardButton("Cofnij") { CallbackData = CommandNames.DefaultCommand }
+            }
+        });
 
         public AddLinkCommand(TelegramBot telegramBot, OtoMotoContext otoMotoContext,
-            IUserService userService, RedisConnectionProvider redis)
+            IUserService userService, RedisConnectionProvider redis, IDefaultCommand defaultCommand)
         {
             _telegramBot = telegramBot.GetBot().Result;
             _otoMotoContext = otoMotoContext;
             _userService = userService;
-            _currentActions = redis.RedisCollection<TelegramCurrentAction>();
+            _redis = redis;
+            _currentRedisActions = redis.RedisCollection<TelegramCurrentAction>();
         }
 
         public override string Name => CommandNames.AddLinkCommand;
         public override async Task ExecuteAsync(Update update)
         {
-            _chatId = update.Message.Chat.Id;
-
-            var currentActions = await _currentActions.FindByIdAsync(_chatId.ToString());
-
-            if (currentActions == null || currentActions.CurrentAction != CommandNames.AddLinkCommand)
+            if (update.Type == UpdateType.CallbackQuery)
             {
+                _chatId = update.CallbackQuery.Message.Chat.Id;
+
+                await _telegramBot.SendChatActionAsync(_chatId, ChatAction.Typing);
+
                 // Send text to chat
                 string text =
                     "Wyślij swój link wyszukiwania, np." +
                     "\r\nhttps://www.otomoto.pl/osobowe/volkswagen/passat/od-2015?search%5Bfilter_enum_gearbox%5D=automatic";
 
-                await _telegramBot.SendTextMessageAsync(_chatId, text, replyMarkup: _keyboardButtonBack, disableWebPagePreview: true);
+                await _telegramBot.EditMessageTextAsync(_chatId,
+                    update.CallbackQuery.Message.MessageId, text, replyMarkup: _inlineKeyboard);
 
                 // Set redis current action value
-                await _currentActions.InsertAsync(new TelegramCurrentAction()
+                await _currentRedisActions.InsertAsync(new TelegramCurrentAction()
                 {
                     CurrentAction = CommandNames.AddLinkCommand,
                     TelegramChatId = _chatId
                 });
+
+                return;
             }
-            else
+
+            if (update.Type == UpdateType.Message)
             {
+                _chatId = update.Message.Chat.Id;
+
                 // Send typing to chat
                 await _telegramBot.SendChatActionAsync(_chatId, ChatAction.Typing);
 
                 // Check link from message
                 if (!CheckLink(update))
                 {
-                    await _telegramBot.SendTextMessageAsync(_chatId, "Wyślij poprawny link", replyMarkup: _keyboardButtonBack);
+                    await _telegramBot.SendTextMessageAsync(_chatId, "Wyślij poprawny link",
+                        replyMarkup: _inlineKeyboard);
                     return;
                 }
 
@@ -78,20 +86,10 @@ namespace Telegram.Commands
                     return;
 
                 // Set redis value
-                currentActions.CurrentAction = CommandNames.DefaultCommand;
-                await _currentActions.Update(currentActions);
+                await _redis.Connection.UnlinkAsync($"TelegramCurrentAction:{_chatId}");
 
-                //Send finish message
-                ReplyKeyboardMarkup keyboardButtonDefault = new(new[]
-                {
-                    new KeyboardButton[] { "Pokaż moje linki", "Dodaj link" },
-                })
-                {
-                    ResizeKeyboard = true
-                };
-
-                await _telegramBot.SendTextMessageAsync(_chatId, $"Dodano link wyszukiwania:\r\n{_link}"
-                    , replyMarkup: keyboardButtonDefault, disableWebPagePreview: true);
+                await _telegramBot.SendTextMessageAsync(_chatId, $"Dodano link:\r\n{_link}",
+                    replyMarkup: _inlineKeyboard, disableNotification: false);
             }
         }
 
@@ -101,15 +99,17 @@ namespace Telegram.Commands
 
             if (user.SearchLinks != null)
             {
-                if (user.SearchLinks.Count >= 10)
+                if (user.SearchLinks.Count >= 5)
                 {
-                    await _telegramBot.SendTextMessageAsync(_chatId, "Możesz posiadać max 10 linków wyszukiwania", replyMarkup: _keyboardButtonBack);
+                    await _telegramBot.SendTextMessageAsync(_chatId, "Możesz posiadać max 5 linków wyszukiwania",
+                        replyMarkup: _inlineKeyboard);
                     return false;
                 }
 
                 if (user.SearchLinks.Any(x => x.Link == _link))
                 {
-                    await _telegramBot.SendTextMessageAsync(_chatId, "Link wyszukiwania jest już dodany", replyMarkup: _keyboardButtonBack);
+                    await _telegramBot.SendTextMessageAsync(_chatId, "Link wyszukiwania jest już dodany",
+                        replyMarkup: _inlineKeyboard);
                     return false;
                 }
             }

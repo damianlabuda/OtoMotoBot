@@ -1,45 +1,50 @@
-﻿using Microsoft.EntityFrameworkCore;
-using Shared.Entities;
-using Telegram.Bot;
+﻿using Telegram.Bot;
 using Telegram.Bot.Types;
 using Telegram.Bot.Types.Enums;
 using Telegram.Bot.Types.ReplyMarkups;
+using Telegram.Services;
 
 namespace Telegram.Commands
 {
     public class ShowMyLinksCommand : BaseCommand
     {
-        private readonly OtoMotoContext _otoMotoContext;
+        private readonly IUserService _userService;
         private readonly TelegramBotClient _telegramBot;
 
-        public ShowMyLinksCommand(OtoMotoContext otoMotoContext, TelegramBot telegramBot)
+        public ShowMyLinksCommand(TelegramBot telegramBot, IUserService userService)
         {
-            _otoMotoContext = otoMotoContext;
+            _userService = userService;
             _telegramBot = telegramBot.GetBot().Result;
         }
 
         public override string Name => CommandNames.ShowMyLinksCommand;
         public override async Task ExecuteAsync(Update update)
         {
-            var user = await _otoMotoContext.Users.Include(x => x.SearchLinks)
-                .FirstOrDefaultAsync(x => x.TelegramChatId == update.Message.Chat.Id);
+            await _telegramBot.SendChatActionAsync(update.CallbackQuery.Message.Chat.Id, ChatAction.Typing);
 
-            if (user == null)
+            var user = await _userService.Get(update);
+
+            if (user == null || user.SearchLinks.Count == 0)
             {
-                await _telegramBot.SendTextMessageAsync(update.Message.Chat.Id, "Brak linków do wyświetlenia");
+                await _telegramBot.AnswerCallbackQueryAsync(update.CallbackQuery.Id,
+                    "Brak linków do wyświetlenia");
                 return;
             }
 
-            InlineKeyboardMarkup inlineKeyboard = user.SearchLinks.Select(x => new InlineKeyboardButton(x.Link){ CallbackData = x.Id.ToString() }).ToArray();
+            InlineKeyboardMarkup inlineKeyboard = user.SearchLinks.Select(x =>
+                new[] { new InlineKeyboardButton(x.Link) { CallbackData = $"{CommandNames.OptionsLinkCommand}{x.Id}" } }).ToArray();
 
-            if (!inlineKeyboard.InlineKeyboard.Any())
+            inlineKeyboard = inlineKeyboard.InlineKeyboard.Concat((new[]
             {
-                await _telegramBot.SendTextMessageAsync(update.Message.Chat.Id, "Brak linków do wyświetlenia");
-                return;
-            }
+                new[]
+                {
+                    new InlineKeyboardButton("Cofnij") {CallbackData = CommandNames.DefaultCommand}
+                }
+            })).ToArray();
 
-            await _telegramBot.SendTextMessageAsync(update.Message.Chat.Id, "Twoje zapisane linki wyszukiwania:",
-                ParseMode.Markdown, replyMarkup: inlineKeyboard);
+            await _telegramBot.EditMessageTextAsync(update.CallbackQuery.Message.Chat.Id,
+                update.CallbackQuery.Message.MessageId, "Twoje linki wyszukiwania:",
+                replyMarkup: inlineKeyboard);
         }
     }
 }

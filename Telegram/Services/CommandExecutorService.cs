@@ -31,30 +31,44 @@ namespace Telegram.Services
                 var currentRedisActions =
                     await _currentRedisActions.FindByIdAsync(update.Message.Chat.Id.ToString());
 
-                if (currentRedisActions == null || currentRedisActions.CurrentAction == CommandNames.DefaultCommand || update.Message?.Text == "Cofnij")
+                if (currentRedisActions == null)
                 {
-                    switch (update.Message?.Text)
-                    {
-                        case "Pokaż moje linki":
-                            await ExecuteAsync(CommandNames.ShowMyLinksCommand, update);
-                            break;
-                        case "Dodaj link":
-                            await ExecuteAsync(CommandNames.AddLinkCommand, update);
-                            break;
-                        default:
-                            await ExecuteAsync(CommandNames.DefaultCommand, update);
-                            break;
-                    }
+                    await ExecuteAsync(CommandNames.DefaultCommand, update);
+                    return;
                 }
-                else if (currentRedisActions.CurrentAction == CommandNames.AddLinkCommand)
+                if (currentRedisActions.CurrentAction == CommandNames.AddLinkCommand)
                 {
                     await ExecuteAsync(CommandNames.AddLinkCommand, update);
+                    return;
+                }
+            }
+
+            if (update.Type == UpdateType.CallbackQuery)
+            {
+                switch (update.CallbackQuery?.Data)
+                {
+                    case CommandNames.ShowMyLinksCommand:
+                        await ExecuteAsync(CommandNames.ShowMyLinksCommand, update);
+                        return;
+                    case CommandNames.AddLinkCommand:
+                        await ExecuteAsync(CommandNames.AddLinkCommand, update);
+                        return;
+                    case CommandNames.DefaultCommand:
+                        await ExecuteAsync(CommandNames.DefaultCommand, update);
+                        return;
                 }
 
+                if (update.CallbackQuery.Data.Contains(CommandNames.OptionsLinkCommand))
+                {
+                    await ExecuteAsync(CommandNames.OptionsLinkCommand, update);
+                    return;
+                }
 
-                
-
-
+                if (update.CallbackQuery.Data.Contains(CommandNames.RemoveLinkCommand))
+                {
+                    await ExecuteAsync(CommandNames.RemoveLinkCommand, update);
+                    return;
+                }
             }
         }
 

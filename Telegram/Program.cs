@@ -19,10 +19,13 @@ builder.Services.AddScoped<ITelegramBotService, TelegramBotService>();
 builder.Services.AddScoped<ICommandExecutorServices, CommandExecutorService>();
 builder.Services.AddScoped<IUserService, UserService>();
 builder.Services.AddScoped<BaseCommand, DefaultCommand>();
+builder.Services.AddScoped<IDefaultCommand, DefaultCommand>();
 builder.Services.AddScoped<BaseCommand, AddLinkCommand>();
 builder.Services.AddScoped<BaseCommand, ShowMyLinksCommand>();
+builder.Services.AddScoped<BaseCommand, OptionsLinkCommand>();
+builder.Services.AddScoped<BaseCommand, RemoveLinkCommand>();
 builder.Services.AddSingleton(new RedisConnectionProvider(builder.Configuration.GetConnectionString("Redis")));
-builder.Services.AddHostedService<IndexCreationServices>();
+builder.Services.AddHostedService<IndexCreationService>();
 
 builder.Services.AddDbContext<OtoMotoContext>(options =>
     options.UseSqlServer(builder.Configuration.GetConnectionString("OtoMotoTestConnectionString")));

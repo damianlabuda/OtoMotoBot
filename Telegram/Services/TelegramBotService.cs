@@ -22,7 +22,7 @@ namespace Telegram.Services
         {
             var deserializedUpdate = JsonConvert.DeserializeObject<Update>(update.ToString());
 
-            if (deserializedUpdate?.Message?.Chat == null)
+            if (deserializedUpdate?.Message?.Chat == null && deserializedUpdate?.CallbackQuery == null)
                 return;
 
             await _commandExecutorServices.Execute(deserializedUpdate);

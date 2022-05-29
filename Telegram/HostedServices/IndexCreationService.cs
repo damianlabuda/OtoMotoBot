@@ -1,18 +1,13 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using Redis.OM;
+﻿using Redis.OM;
 using Shared.Models;
 
 namespace Telegram.HostedServices
 {
-    public class IndexCreationServices : IHostedService
+    public class IndexCreationService : IHostedService
     {
         private readonly RedisConnectionProvider _redis;
 
-        public IndexCreationServices(RedisConnectionProvider redis)
+        public IndexCreationService(RedisConnectionProvider redis)
         {
             _redis = redis;
         }
