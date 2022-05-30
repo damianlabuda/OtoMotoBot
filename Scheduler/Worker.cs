@@ -37,6 +37,14 @@ namespace Scheduler
 
                     var searchLinks = await _dbOtoMotoContext.SearchLinks.Include(x => x.Users).ToListAsync();
 
+                    // Remove search links when there are no users
+                    var searchLinksToRemove = searchLinks.Where(x => x.Users.Count == 0).ToList();
+                    if (searchLinksToRemove.Any())
+                    {
+                        _dbOtoMotoContext.RemoveRange(searchLinksToRemove);
+                        searchLinks.RemoveAll(x => x.Users.Count == 0);
+                    }
+
                     foreach (var searchLink in searchLinks)
                     {
                         var searchLinkDto = new SearchLink()
