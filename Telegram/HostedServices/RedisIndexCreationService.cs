@@ -1,13 +1,13 @@
 ﻿using Redis.OM;
-using Shared.Models;
+using Telegram.Models;
 
 namespace Telegram.HostedServices
 {
-    public class IndexCreationService : IHostedService
+    public class RedisIndexCreationService : IHostedService
     {
         private readonly RedisConnectionProvider _redis;
 
-        public IndexCreationService(RedisConnectionProvider redis)
+        public RedisIndexCreationService(RedisConnectionProvider redis)
         {
             _redis = redis;
         }
@@ -17,7 +17,7 @@ namespace Telegram.HostedServices
             var listOfIndexes = (await _redis.Connection.ExecuteAsync("FT._LIST")).ToArray().Select(x => x.ToString());
             if (listOfIndexes.All(x => x != "telegramcurrentaction-idx"))
             {
-                await _redis.Connection.CreateIndexAsync(typeof(TelegramCurrentAction));
+                await _redis.Connection.CreateIndexAsync(typeof(TelegramCurrentActionRedis));
             }
         }
 

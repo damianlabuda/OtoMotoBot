@@ -2,31 +2,32 @@
 using Telegram.Bot.Types;
 using Telegram.Bot.Types.Enums;
 using Telegram.Bot.Types.ReplyMarkups;
-using Telegram.Services;
+using Telegram.Interfaces;
+using Telegram.Models;
 
 namespace Telegram.Commands
 {
-    public class ShowMyLinksCommand : BaseCommand
+    public class ShowMyLinksCommand : IBaseCommand
     {
+        private readonly ITelegramBotClient _telegramBotClient;
         private readonly IUserService _userService;
-        private readonly TelegramBotClient _telegramBot;
 
-        public ShowMyLinksCommand(TelegramBot telegramBot, IUserService userService)
+        public ShowMyLinksCommand(ITelegramBotClient telegramBotClient, IUserService userService)
         {
+            _telegramBotClient = telegramBotClient;
             _userService = userService;
-            _telegramBot = telegramBot.GetBot().Result;
         }
 
-        public override string Name => CommandNames.ShowMyLinksCommand;
-        public override async Task ExecuteAsync(Update update)
+        public string Name => CommandNames.ShowMyLinksCommand;
+        public async Task ExecuteAsync(Update update)
         {
-            await _telegramBot.SendChatActionAsync(update.CallbackQuery.Message.Chat.Id, ChatAction.Typing);
+            await _telegramBotClient.SendChatActionAsync(update.CallbackQuery.Message.Chat.Id, ChatAction.Typing);
 
             var user = await _userService.Get(update);
 
             if (user == null || user.SearchLinks.Count == 0)
             {
-                await _telegramBot.AnswerCallbackQueryAsync(update.CallbackQuery.Id,
+                await _telegramBotClient.AnswerCallbackQueryAsync(update.CallbackQuery.Id,
                     "Brak linków do wyświetlenia");
                 return;
             }
@@ -42,7 +43,7 @@ namespace Telegram.Commands
                 }
             })).ToArray();
 
-            await _telegramBot.EditMessageTextAsync(update.CallbackQuery.Message.Chat.Id,
+            await _telegramBotClient.EditMessageTextAsync(update.CallbackQuery.Message.Chat.Id,
                 update.CallbackQuery.Message.MessageId, "Twoje linki wyszukiwania:",
                 replyMarkup: inlineKeyboard);
         }

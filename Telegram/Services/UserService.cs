@@ -2,16 +2,11 @@
 using Shared.Entities;
 using Telegram.Bot.Types;
 using Telegram.Bot.Types.Enums;
+using Telegram.Interfaces;
 using User = Shared.Entities.User;
 
 namespace Telegram.Services
-{
-    public interface IUserService
-    {
-        Task<User> GetOrCreated(Update update);
-        Task<User> Get(Update update);
-    }
-
+{ 
     public class UserService : IUserService
     {
         private readonly OtoMotoContext _otoMotoContext;

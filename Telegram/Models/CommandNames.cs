@@ -1,4 +1,4 @@
-﻿namespace Telegram
+﻿namespace Telegram.Models
 {
     public class CommandNames
     {

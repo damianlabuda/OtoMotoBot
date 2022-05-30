@@ -3,25 +3,27 @@ using Shared.Entities;
 using Telegram.Bot;
 using Telegram.Bot.Types;
 using Telegram.Bot.Types.Enums;
+using Telegram.Interfaces;
+using Telegram.Models;
 
 namespace Telegram.Commands
 {
-    public class RemoveLinkCommand : BaseCommand
+    public class RemoveLinkCommand : IBaseCommand
     {
         private readonly OtoMotoContext _otoMotoContext;
+        private readonly ITelegramBotClient _telegramBotClient;
         private readonly IDefaultCommand _defaultCommand;
-        private readonly TelegramBotClient _telegramBot;
 
-        public RemoveLinkCommand(OtoMotoContext otoMotoContext, TelegramBot telegramBot, IDefaultCommand defaultCommand)
+        public RemoveLinkCommand(OtoMotoContext otoMotoContext, ITelegramBotClient telegramBotClient, IDefaultCommand defaultCommand)
         {
             _otoMotoContext = otoMotoContext;
+            _telegramBotClient = telegramBotClient;
             _defaultCommand = defaultCommand;
-            _telegramBot = telegramBot.GetBot().Result;
         }
-        public override string Name => CommandNames.RemoveLinkCommand;
-        public override async Task ExecuteAsync(Update update)
+        public string Name => CommandNames.RemoveLinkCommand;
+        public async Task ExecuteAsync(Update update)
         {
-            await _telegramBot.SendChatActionAsync(update.CallbackQuery.Message.Chat.Id, ChatAction.Typing);
+            await _telegramBotClient.SendChatActionAsync(update.CallbackQuery.Message.Chat.Id, ChatAction.Typing);
 
             if (!Guid.TryParse(update.CallbackQuery.Data.Replace(CommandNames.RemoveLinkCommand, string.Empty), out Guid guidLinkId))
                 return;
@@ -36,7 +38,7 @@ namespace Telegram.Commands
 
             await _otoMotoContext.SaveChangesAsync();
 
-            await _telegramBot.AnswerCallbackQueryAsync(update.CallbackQuery.Id, "Usunieto link");
+            await _telegramBotClient.AnswerCallbackQueryAsync(update.CallbackQuery.Id, "Usunieto link");
 
             // Show default view
             await _defaultCommand.ExecuteAsync(update);

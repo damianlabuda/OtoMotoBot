@@ -1,27 +1,22 @@
 ﻿using Redis.OM;
 using Redis.OM.Searching;
-using Shared.Models;
 using Telegram.Bot.Types;
 using Telegram.Bot.Types.Enums;
-using Telegram.Commands;
+using Telegram.Interfaces;
+using Telegram.Models;
 
 namespace Telegram.Services
 {
-    public interface ICommandExecutorServices
+    public class CommandExecutorService : ICommandExecutorService
     {
-        Task Execute(Update update);
-    }
-
-    public class CommandExecutorService : ICommandExecutorServices
-    {
-        private readonly List<BaseCommand> _commands;
-        private readonly IRedisCollection<TelegramCurrentAction> _currentRedisActions;
-        private BaseCommand _lastBaseCommand;
+        private readonly List<IBaseCommand> _commands;
+        private readonly IRedisCollection<TelegramCurrentActionRedis> _currentRedisActions;
+        private IBaseCommand _lastBaseCommand;
 
         public CommandExecutorService(IServiceProvider serviceProvider, RedisConnectionProvider redis)
         {
-            _commands = serviceProvider.GetServices<BaseCommand>().ToList();
-            _currentRedisActions = redis.RedisCollection<TelegramCurrentAction>();
+            _commands = serviceProvider.GetServices<IBaseCommand>().ToList();
+            _currentRedisActions = redis.RedisCollection<TelegramCurrentActionRedis>();
         }
 
         public async Task Execute(Update update)

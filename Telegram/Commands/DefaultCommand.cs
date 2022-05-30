@@ -3,34 +3,31 @@ using Telegram.Bot;
 using Telegram.Bot.Types;
 using Telegram.Bot.Types.Enums;
 using Telegram.Bot.Types.ReplyMarkups;
+using Telegram.Interfaces;
+using Telegram.Models;
 
 namespace Telegram.Commands
-{
-    public interface IDefaultCommand
+{ 
+    public class DefaultCommand : IBaseCommand, IDefaultCommand
     {
-        Task ExecuteAsync(Update update);
-    }
-
-    public class DefaultCommand : BaseCommand, IDefaultCommand
-    {
+        private readonly ITelegramBotClient _telegramBotClient;
         private readonly RedisConnectionProvider _redis;
-        private readonly TelegramBotClient _telegramBot;
 
-        public DefaultCommand(TelegramBot telegramBot, RedisConnectionProvider redis)
+        public DefaultCommand(ITelegramBotClient telegramBotClient, RedisConnectionProvider redis)
         {
+            _telegramBotClient = telegramBotClient;
             _redis = redis;
-            _telegramBot = telegramBot.GetBot().Result;
         }
 
-        public override string Name => CommandNames.DefaultCommand;
+        public string Name => CommandNames.DefaultCommand;
 
-        public override async Task ExecuteAsync(Update update)
+        public async Task ExecuteAsync(Update update)
         {
             if (update.Type == UpdateType.Message)
-                await _telegramBot.SendChatActionAsync(update.Message.Chat.Id, ChatAction.Typing);
+                await _telegramBotClient.SendChatActionAsync(update.Message.Chat.Id, ChatAction.Typing);
 
             if (update.Type == UpdateType.CallbackQuery)
-                await _telegramBot.SendChatActionAsync(update.CallbackQuery.Message.Chat.Id, ChatAction.Typing);
+                await _telegramBotClient.SendChatActionAsync(update.CallbackQuery.Message.Chat.Id, ChatAction.Typing);
 
             string text =
                 "Kanał służy do śledzenia nowo dodanych aukcji w serwisie otomoto.pl, " +
@@ -54,7 +51,7 @@ namespace Telegram.Commands
 
             if (update.Type == UpdateType.Message)
             {
-                await _telegramBot.SendTextMessageAsync(update.Message.Chat.Id, text,
+                await _telegramBotClient.SendTextMessageAsync(update.Message.Chat.Id, text,
                     ParseMode.Markdown, replyMarkup: inlineKeyboard);
                 await _redis.Connection.UnlinkAsync($"TelegramCurrentAction:{update.Message.Chat.Id}");
                 return;
@@ -62,7 +59,7 @@ namespace Telegram.Commands
 
             if (update.Type == UpdateType.CallbackQuery)
             {
-                await _telegramBot.EditMessageTextAsync(update.CallbackQuery.Message.Chat.Id,
+                await _telegramBotClient.EditMessageTextAsync(update.CallbackQuery.Message.Chat.Id,
                     update.CallbackQuery.Message.MessageId, text, replyMarkup: inlineKeyboard);
                 await _redis.Connection.UnlinkAsync($"TelegramCurrentAction:{update.CallbackQuery.Message.Chat.Id}");
                 return;

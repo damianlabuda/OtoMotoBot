@@ -1,9 +1,9 @@
 ﻿using Redis.OM.Modeling;
 
-namespace Shared.Models
+namespace Telegram.Models
 {
     [Document(StorageType = StorageType.Json, Prefixes = new []{ "TelegramCurrentAction" })]
-    public class TelegramCurrentAction
+    public class TelegramCurrentActionRedis
     {
         [RedisIdField]
         [Indexed]

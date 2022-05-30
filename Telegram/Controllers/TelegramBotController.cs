@@ -1,23 +1,22 @@
 ﻿using Microsoft.AspNetCore.Mvc;
-using Telegram.Services;
+using Telegram.Bot.Types;
+using Telegram.Interfaces;
 
 namespace Telegram.Controllers
 {
-    [ApiController]
-    [Route("api/telegram/update")]
     public class TelegramBotController : ControllerBase
     {
-        private readonly ITelegramBotService _telegramBotService;
+        private readonly ICommandExecutorService _commandExecutorService;
 
-        public TelegramBotController(ITelegramBotService telegramBotService)
+        public TelegramBotController(ICommandExecutorService commandExecutorService)
         {
-            _telegramBotService = telegramBotService;
+            _commandExecutorService = commandExecutorService;
         }
 
         [HttpPost]
-        public async Task<IActionResult> Update([FromBody] object update)
+        public async Task<IActionResult> Post([FromBody] Update update)
         {
-            await _telegramBotService.Update(update);
+            await _commandExecutorService.Execute(update);
 
             return Ok();
         }
