@@ -5,30 +5,23 @@ using RabbitMQ.Client.Exceptions;
 using Shared.Entities;
 using Shared.Models;
 using System.Text;
+using Scraper.Interfaces;
 
-namespace Scraper
+namespace Scraper.HostedServices
 {
     public class Worker : BackgroundService
     {
         private readonly ILogger<Worker> _logger;
-
         private readonly IServiceScopeFactory _serviceScopeFactory;
-
-        private readonly IOtoMotoHttpClient _otoMotoHttpClient;
-
         private ConnectionFactory _connectionFactory;
-
         private IConnection _connection;
-
         private IModel _channelSearchLinks;
-
         private IModel _channelMessagesToSend;
 
-        public Worker(ILogger<Worker> logger, IServiceScopeFactory serviceScopeFactory, IOtoMotoHttpClient otoMotoHttpClient)
+        public Worker(ILogger<Worker> logger, IServiceScopeFactory serviceScopeFactory)
         {
             _logger = logger;
             _serviceScopeFactory = serviceScopeFactory;
-            _otoMotoHttpClient = otoMotoHttpClient;
         }
 
         public override Task StartAsync(CancellationToken cancellationToken)
@@ -62,12 +55,14 @@ namespace Scraper
                 {
                     var searchLink = JsonConvert.DeserializeObject<SearchLink>(receivedMessage);
 
-                    var otomotoSearch = new OtomotoSearchAuctions(searchLink, _otoMotoHttpClient);
-                    var adLinks = await otomotoSearch.Search();
+                    using var scope = _serviceScopeFactory.CreateScope();
+                    var otomotoSearchAuctions = scope.ServiceProvider.GetRequiredService<ISearchAuctionsService>();
+                    var adLinks = await otomotoSearchAuctions.Search(searchLink);
 
                     if (adLinks.Any())
-                    {
-                        var searchInDb = new SearchInDb(_serviceScopeFactory);
+                    { 
+                        using var scopeSearchInDb = _serviceScopeFactory.CreateScope();
+                        var searchInDb = scopeSearchInDb.ServiceProvider.GetRequiredService<ICheckInDbService>();
                         var newAdMessages = await searchInDb.Check(adLinks);
 
                         if (newAdMessages.Any() && searchLink.SearchCount > 0)

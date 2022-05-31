@@ -1,5 +1,9 @@
+using System.Net;
 using Microsoft.EntityFrameworkCore;
 using Scraper;
+using Scraper.HostedServices;
+using Scraper.Interfaces;
+using Scraper.Services;
 using Shared.Entities;
 
 IHost host = Host.CreateDefaultBuilder(args)
@@ -28,8 +32,12 @@ IHost host = Host.CreateDefaultBuilder(args)
         {
             //Proxy = new WebProxy("http://127.0.0.1:8080"),
             //UseProxy = true,
-            UseCookies = false
+            UseCookies = false,
+            AutomaticDecompression = DecompressionMethods.GZip
         });
+
+        services.AddScoped<ISearchAuctionsService, SearchAuctionsService>();
+        services.AddScoped<ICheckInDbService, CheckInDbService>();
 
         services.AddHostedService<Worker>();
     })

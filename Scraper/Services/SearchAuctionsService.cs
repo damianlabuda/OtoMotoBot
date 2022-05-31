@@ -1,40 +1,37 @@
-﻿using Newtonsoft.Json;
-using Newtonsoft.Json.Linq;
-using Shared.Entities;
-using Shared.Models.SearchLinkStructure;
-using System.Diagnostics;
+﻿using System.Diagnostics;
 using System.Net;
 using System.Text.RegularExpressions;
 using System.Web;
+using Newtonsoft.Json;
+using Newtonsoft.Json.Linq;
+using Scraper.Interfaces;
+using Shared.Entities;
+using Shared.Models.SearchLinkStructure;
 
-namespace Scraper
+namespace Scraper.Services
 {
-    public class OtomotoSearchAuctions
+    public class SearchAuctionsService : ISearchAuctionsService
     {
-        private readonly SearchLink _searchLink;
-
+        private SearchLink? _searchLink;
         private readonly IOtoMotoHttpClient _otoMotoHttpClient;
-
+        private readonly ILogger<SearchAuctionsService> _logger;
         private readonly List<AdLink> _adLinks = new List<AdLink>();
-
         private readonly LinkExtensions _extensions = new LinkExtensions();
-
         private readonly LinkVariables _variables = new LinkVariables();
-
         private readonly SemaphoreSlim _semaphoreSlim = new SemaphoreSlim(10, 10);
+        private int TotalPages { get; set; } = 0;
+        private int TotalCount { get; set; } = 0;
 
-        private int _totalPages { get; set; } = 0;
-
-        private int _totalCount { get; set; } = 0;
-
-        public OtomotoSearchAuctions(SearchLink searchLink, IOtoMotoHttpClient otoMotoHttpClient)
+        public SearchAuctionsService(IOtoMotoHttpClient otoMotoHttpClient, ILogger<SearchAuctionsService> logger)
         {
-            _searchLink = searchLink;
             _otoMotoHttpClient = otoMotoHttpClient;
+            _logger = logger;
         }
 
-        public async Task<List<AdLink>> Search()
+        public async Task<List<AdLink>> Search(SearchLink searchLink)
         {
+            _searchLink = searchLink;
+
             Stopwatch stopwatch = Stopwatch.StartNew();
 
             string firstLink = GenerateLinkToApi(1);
@@ -43,9 +40,9 @@ namespace Scraper
             {
                 await GetAuctions(firstLink);
 
-                if (_totalPages > 1)
+                if (TotalPages > 1)
                 {
-                    var links = Enumerable.Range(2, _totalPages - 1).Select(GenerateLinkToApi);
+                    var links = Enumerable.Range(2, TotalPages - 1).Select(GenerateLinkToApi);
                     var tasks = links.Select(GetAuctions);
 
                     await Task.WhenAll(tasks);
@@ -53,7 +50,7 @@ namespace Scraper
             }
 
             stopwatch.Stop();
-            Console.WriteLine($"{DateTime.Now} - Znaleziono: {_adLinks.Count} z {_totalCount} rekordów, dla: {_searchLink.Link}, czas: {stopwatch.Elapsed}");
+            _logger.LogInformation($"{DateTime.Now} - Znaleziono: {_adLinks.Count} z {TotalCount} rekordów, dla: {_searchLink.Link}, czas: {stopwatch.Elapsed}");
 
             return _adLinks;
         }
@@ -164,7 +161,7 @@ namespace Scraper
                             return false;
                         }
 
-                        if (_totalPages == 0)
+                        if (TotalPages == 0)
                         {
                             GetAmountPages(json);
                         }
@@ -192,9 +189,9 @@ namespace Scraper
                 return;
             }
 
-            if ((int)totalCount > _totalCount)
+            if ((int)totalCount > TotalCount)
             {
-                _totalCount = (int)totalCount;
+                TotalCount = (int)totalCount;
             }
 
             if (!double.TryParse(json.SelectToken("data.advertSearch.pageInfo.pageSize").ToString(), out double pageSize) && pageSize > 0)
@@ -204,9 +201,9 @@ namespace Scraper
 
             int totalPages = (int)Math.Ceiling(totalCount / pageSize);
 
-            if (totalPages > _totalPages)
+            if (totalPages > TotalPages)
             {
-                _totalPages = totalPages;
+                TotalPages = totalPages;
             }
         }
     }

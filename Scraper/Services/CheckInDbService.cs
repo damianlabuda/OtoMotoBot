@@ -1,26 +1,25 @@
-﻿using Microsoft.EntityFrameworkCore;
+﻿using System.Diagnostics;
+using Microsoft.EntityFrameworkCore;
+using Scraper.Interfaces;
 using Shared.Entities;
 using Shared.Models;
-using System.Diagnostics;
 
-namespace Scraper
+namespace Scraper.Services
 {
-    public class SearchInDb
+    public class CheckInDbService : ICheckInDbService
     {
         private readonly IServiceScopeFactory _serviceScopeFactory;
-
+        private readonly ILogger<CheckInDbService> _logger;
         private readonly SemaphoreSlim _semaphoreSlim = new SemaphoreSlim(100, 100);
-
         private readonly List<NewAdMessage> _newAdMessages = new List<NewAdMessage>();
+        private readonly object _locker = new object();
+        private int NewRecords { get; set; } = 0;
+        private int UpdatedPriceRecords { get; set; } = 0;
 
-        private readonly object locker = new object();
-
-        public int NewRecords { get; set; } = 0;
-        public int UpdatedPriceRecords { get; set; } = 0;
-
-        public SearchInDb(IServiceScopeFactory serviceScopeFactory)
+        public CheckInDbService(IServiceScopeFactory serviceScopeFactory, ILogger<CheckInDbService> logger)
         {
             _serviceScopeFactory = serviceScopeFactory;
+            _logger = logger;
         }
 
         public async Task<List<NewAdMessage>> Check(List<AdLink> adLinks)
@@ -33,7 +32,7 @@ namespace Scraper
 
             stopwatch.Stop();
 
-            Console.WriteLine($"{DateTime.Now} - {NewRecords} nowych rekordów, {UpdatedPriceRecords} zmian cen, czas: {stopwatch.Elapsed}");
+            _logger.LogInformation($"{DateTime.Now} - {NewRecords} nowych rekordów, {UpdatedPriceRecords} zmian cen, czas: {stopwatch.Elapsed}");
 
             return _newAdMessages;
         }
@@ -58,7 +57,7 @@ namespace Scraper
 
                             adLinkFromDb.Price = adLink.Price;
 
-                            lock (locker)
+                            lock (_locker)
                                 UpdatedPriceRecords++;
                         }
                     }
@@ -68,7 +67,7 @@ namespace Scraper
 
                         await otoMotoContext.AdLinks.AddAsync(adLink);
 
-                        lock (locker)
+                        lock (_locker)
                             NewRecords++;
                     }
 
