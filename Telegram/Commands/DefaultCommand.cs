@@ -53,7 +53,7 @@ namespace Telegram.Commands
             {
                 await _telegramBotClient.SendTextMessageAsync(update.Message.Chat.Id, text,
                     ParseMode.Markdown, replyMarkup: inlineKeyboard);
-                await _redis.Connection.UnlinkAsync($"TelegramCurrentAction:{update.Message.Chat.Id}");
+                await _redis.Connection.UnlinkAsync($"TelegramCurrentActionRedis:{update.Message.Chat.Id}");
                 return;
             }
 
@@ -61,7 +61,7 @@ namespace Telegram.Commands
             {
                 await _telegramBotClient.EditMessageTextAsync(update.CallbackQuery.Message.Chat.Id,
                     update.CallbackQuery.Message.MessageId, text, replyMarkup: inlineKeyboard);
-                await _redis.Connection.UnlinkAsync($"TelegramCurrentAction:{update.CallbackQuery.Message.Chat.Id}");
+                await _redis.Connection.UnlinkAsync($"TelegramCurrentActionRedis:{update.CallbackQuery.Message.Chat.Id}");
                 return;
             }
         }

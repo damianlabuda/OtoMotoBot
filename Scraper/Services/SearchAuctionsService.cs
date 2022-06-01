@@ -13,7 +13,7 @@ namespace Scraper.Services
     public class SearchAuctionsService : ISearchAuctionsService
     {
         private SearchLink? _searchLink;
-        private readonly IOtoMotoHttpClient _otoMotoHttpClient;
+        private readonly IHttpClientService _httpClientService;
         private readonly ILogger<SearchAuctionsService> _logger;
         private readonly List<AdLink> _adLinks = new List<AdLink>();
         private readonly LinkExtensions _extensions = new LinkExtensions();
@@ -22,9 +22,9 @@ namespace Scraper.Services
         private int TotalPages { get; set; } = 0;
         private int TotalCount { get; set; } = 0;
 
-        public SearchAuctionsService(IOtoMotoHttpClient otoMotoHttpClient, ILogger<SearchAuctionsService> logger)
+        public SearchAuctionsService(IHttpClientService httpClientService, ILogger<SearchAuctionsService> logger)
         {
-            _otoMotoHttpClient = otoMotoHttpClient;
+            _httpClientService = httpClientService;
             _logger = logger;
         }
 
@@ -50,7 +50,12 @@ namespace Scraper.Services
             }
 
             stopwatch.Stop();
-            _logger.LogInformation($"{DateTime.Now} - Znaleziono: {_adLinks.Count} z {TotalCount} rekordów, dla: {_searchLink.Link}, czas: {stopwatch.Elapsed}");
+
+            if (_adLinks.Count > 0)
+                _logger.LogInformation($"{DateTime.Now} - Znaleziono: {_adLinks.Count} z {TotalCount} rekordów, dla: {_searchLink.Link}, czas: {stopwatch.Elapsed}");
+
+            if (_adLinks.Count == 0)
+                _logger.LogWarning($"{DateTime.Now} - Znaleziono: {_adLinks.Count} z {TotalCount} rekordów, dla: {_searchLink.Link}, czas: {stopwatch.Elapsed}");
 
             return _adLinks;
         }
@@ -125,7 +130,7 @@ namespace Scraper.Services
         {
             try
             {
-                var result = await _otoMotoHttpClient.Get(link);
+                var result = await _httpClientService.Get(link);
 
                 if (result.StatusCode != HttpStatusCode.OK)
                 {

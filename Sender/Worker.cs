@@ -1,22 +1,19 @@
 using Newtonsoft.Json;
 using RabbitMQ.Client;
 using RabbitMQ.Client.Events;
+using RabbitMQ.Client.Exceptions;
+using Sender.Interfaces;
 using Shared.Models;
 using System.Text;
-using RabbitMQ.Client.Exceptions;
 
 namespace Sender
 {
     public class Worker : BackgroundService
     {
         private readonly ILogger<Worker> _logger;
-
         private readonly IServiceScopeFactory _iserviceScopeFactory;
-
         private ConnectionFactory _connectionFactory;
-
         private IConnection _connection;
-
         private IModel _channelMessagesToSend;
 
         public Worker(ILogger<Worker> logger, IServiceScopeFactory iserviceScopeFactory)
@@ -51,10 +48,15 @@ namespace Sender
                 try
                 {
                     var messagesToSent = JsonConvert.DeserializeObject<MessagesToSent>(receivedMessage);
-                    var telegramSender = new TelegramSender(messagesToSent.Users, messagesToSent.NewAdMessages,
-                        _iserviceScopeFactory);
-                    var feedback = await telegramSender.SendsAsync();
-                    _logger.LogInformation(feedback);
+
+                    using var scope = _iserviceScopeFactory.CreateScope();
+                    var telegramSender = scope.ServiceProvider.GetRequiredService<ITelegramSenderService>();
+                    await telegramSender.SendsAsync(messagesToSent.Users, messagesToSent.NewAdMessages);
+
+                    //var telegramSender = new TelegramSenderService(messagesToSent.Users, messagesToSent.NewAdMessages,
+                    //    _iserviceScopeFactory);
+                    //var feedback = await telegramSender.SendsAsync();
+                    //_logger.LogInformation(feedback);
                 }
                 catch (JsonException e)
                 {

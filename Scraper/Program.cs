@@ -1,6 +1,5 @@
 using System.Net;
 using Microsoft.EntityFrameworkCore;
-using Scraper;
 using Scraper.HostedServices;
 using Scraper.Interfaces;
 using Scraper.Services;
@@ -13,7 +12,11 @@ IHost host = Host.CreateDefaultBuilder(args)
         optionsBuilder.UseSqlServer(hostContext.Configuration.GetConnectionString("OtoMotoTestConnectionString"));
         services.AddScoped(x => new OtoMotoContext(optionsBuilder.Options));
 
-        services.AddHttpClient<IOtoMotoHttpClient, OtoMotoHttpClient>(options =>
+        services.AddScoped<ISearchAuctionsService, SearchAuctionsService>();
+        services.AddScoped<ICheckInDbService, CheckInDbService>();
+        services.AddHostedService<Worker>();
+
+        services.AddHttpClient<IHttpClientService, HttpClientService>(options =>
         {
             options.DefaultRequestHeaders.Add("Cache-Control", "max-age=0");
             options.DefaultRequestHeaders.Add("Sec-Ch-Ua", "\"(Not(A:Brand\";v=\"8\", \"Chromium\";v=\"98\"");
@@ -33,13 +36,9 @@ IHost host = Host.CreateDefaultBuilder(args)
             //Proxy = new WebProxy("http://127.0.0.1:8080"),
             //UseProxy = true,
             UseCookies = false,
-            AutomaticDecompression = DecompressionMethods.GZip
+            AutomaticDecompression = DecompressionMethods.All
         });
 
-        services.AddScoped<ISearchAuctionsService, SearchAuctionsService>();
-        services.AddScoped<ICheckInDbService, CheckInDbService>();
-
-        services.AddHostedService<Worker>();
     })
     .Build();
 

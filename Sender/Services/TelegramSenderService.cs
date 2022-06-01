@@ -1,34 +1,33 @@
-﻿using Shared.Models;
-using System.Diagnostics;
+﻿using System.Diagnostics;
+using Sender.Interfaces;
+using Shared.Models;
 using Telegram.Bot;
 using Telegram.Bot.Types;
 using User = Shared.Entities.User;
 
-namespace Sender
+namespace Sender.Services
 {
-    public class TelegramSender
+    public class TelegramSenderService : ITelegramSenderService
     {
-        private readonly List<User> _users;
-
-        private readonly List<NewAdMessage> _newAdMessages;
-
+        private List<User> _users;
+        private List<NewAdMessage> _newAdMessages;
+        private readonly ILogger<TelegramSenderService> _logger;
         private readonly IServiceScopeFactory _iServiceScopeFactory;
-
         private readonly SemaphoreSlim _semaphoreSlim = new SemaphoreSlim(10, 10);
-
         private int MessagesSendCounter { get; set; } = 0;
-
         private readonly object _obj = new object();
         
-        public TelegramSender(List<User> users, List<NewAdMessage> newAdMessages, IServiceScopeFactory iServiceScopeFactory)
+        public TelegramSenderService(ILogger<TelegramSenderService> logger, IServiceScopeFactory iServiceScopeFactory)
         {
-            _users = users;
-            _newAdMessages = newAdMessages;
+            _logger = logger;
             _iServiceScopeFactory = iServiceScopeFactory;
         }
 
-        public async Task<string> SendsAsync()
+        public async Task SendsAsync(List<User> users, List<NewAdMessage> newAdMessages)
         {
+            _users = users;
+            _newAdMessages = newAdMessages;
+
             Stopwatch stopwatch = Stopwatch.StartNew();
 
             var task = _users.Select(SendMessagesAsync);
@@ -37,10 +36,10 @@ namespace Sender
 
             stopwatch.Stop();
 
-            return $"{DateTime.Now} - Wysłano: {MessagesSendCounter} nowych wiadomości," +
-                   $" z {_newAdMessages.Count * _users.Count} zaplanowanych," +
-                   $" dla {_users.Count} użytkowników," +
-                   $" czas {stopwatch.Elapsed}";
+            _logger.LogInformation($"{DateTime.Now} - Wysłano: {MessagesSendCounter} nowych wiadomości," +
+                                   $" z {_newAdMessages.Count * _users.Count} zaplanowanych," +
+                                   $" dla {_users.Count} użytkowników," +
+                                   $" czas {stopwatch.Elapsed}");
         }
 
         private async Task SendMessagesAsync(User user)

@@ -11,16 +11,21 @@ namespace Telegram.Services
     {
         private readonly List<IBaseCommand> _commands;
         private readonly IRedisCollection<TelegramCurrentActionRedis> _currentRedisActions;
+        private readonly IRedisCollection<TelegramTimeLastActionRedis> _timeOfLastActionRedis;
         private IBaseCommand _lastBaseCommand;
 
         public CommandExecutorService(IServiceProvider serviceProvider, RedisConnectionProvider redis)
         {
             _commands = serviceProvider.GetServices<IBaseCommand>().ToList();
             _currentRedisActions = redis.RedisCollection<TelegramCurrentActionRedis>();
+            _timeOfLastActionRedis = redis.RedisCollection<TelegramTimeLastActionRedis>();
         }
 
         public async Task Execute(Update update)
         {
+            if (!await CheckCoolDownAction(update))
+                return;
+
             if (update.Type == UpdateType.Message)
             {
                 var currentRedisActions =
@@ -71,6 +76,30 @@ namespace Telegram.Services
         {
             _lastBaseCommand = _commands.First(x => x.Name == commandName);
             await _lastBaseCommand.ExecuteAsync(update);
+        }
+
+        private async Task<bool> CheckCoolDownAction(Update update)
+        {
+            long chatId = 0;
+            double coolDown = 1;
+
+            if (update.Type == UpdateType.Message)
+                chatId = update.Message.Chat.Id;
+            if (update.Type == UpdateType.CallbackQuery)
+                chatId = update.CallbackQuery.Message.Chat.Id;
+
+            var timeOfLastAction = await _timeOfLastActionRedis.FindByIdAsync(chatId.ToString());
+
+            await _timeOfLastActionRedis.InsertAsync(new TelegramTimeLastActionRedis()
+            {
+                TelegramChatId = chatId,
+                Time = DateTime.UtcNow.AddSeconds(coolDown)
+            });
+
+            if (timeOfLastAction == null || timeOfLastAction.Time < DateTime.UtcNow)
+                return true;
+
+            return false;
         }
     }
 }
