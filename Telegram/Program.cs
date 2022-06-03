@@ -1,6 +1,8 @@
 using Microsoft.EntityFrameworkCore;
 using Redis.OM;
 using Shared.Entities;
+using Shared.Interfaces;
+using Shared.Services;
 using Telegram.Bot;
 using Telegram.Commands;
 using Telegram.HostedServices;
@@ -14,6 +16,7 @@ builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 builder.Services.AddScoped<ICommandExecutorService, CommandExecutorService>();
 builder.Services.AddScoped<IUserService, UserService>();
+builder.Services.AddScoped<ISearchLinkService, SearchLinkService>();
 builder.Services.AddScoped<IDefaultCommand, DefaultCommand>();
 builder.Services.AddScoped<IBaseCommand, DefaultCommand>();
 builder.Services.AddScoped<IBaseCommand, AddLinkCommand>();

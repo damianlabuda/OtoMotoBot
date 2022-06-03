@@ -1,4 +1,6 @@
-﻿namespace Shared.Entities
+﻿using System.ComponentModel.DataAnnotations.Schema;
+
+namespace Shared.Entities
 {
     public class SearchLink
     { 
@@ -8,6 +10,8 @@
         public virtual List<User> Users { get; set; }
         public virtual List<AdLink> AdLinks { get; set; }
         public DateTime CreatedDateTime { get; set; }
+
+        [DatabaseGenerated(DatabaseGeneratedOption.Computed)]
         public DateTime? LastUpdateDateTime { get; set; }
     }
 }

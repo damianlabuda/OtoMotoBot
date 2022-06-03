@@ -15,12 +15,12 @@ namespace Telegram.HostedServices
         public async Task StartAsync(CancellationToken cancellationToken)
         {
             var listOfIndexes = (await _redis.Connection.ExecuteAsync("FT._LIST")).ToArray().Select(x => x.ToString());
-            if (listOfIndexes.All(x => x != "telegramcurrentactionredis-idx"))
+            if (listOfIndexes.All(x => x != $"{typeof(TelegramCurrentActionRedis)}-idx"))
             {
                 await _redis.Connection.CreateIndexAsync(typeof(TelegramCurrentActionRedis));
             }
 
-            if (listOfIndexes.All(x => x != "telegramtimelastactionredis-idx"))
+            if (listOfIndexes.All(x => x != $"{typeof(TelegramTimeLastActionRedis)}-idx"))
             {
                 await _redis.Connection.CreateIndexAsync(typeof(TelegramTimeLastActionRedis));
             }

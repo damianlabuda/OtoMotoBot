@@ -2,7 +2,7 @@
 
 namespace Telegram.Models
 {
-    [Document(StorageType = StorageType.Json, Prefixes = new []{ "TelegramTimeLastActionRedis" })]
+    [Document(StorageType = StorageType.Json)]
     public class TelegramTimeLastActionRedis
     {
         [RedisIdField]

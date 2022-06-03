@@ -1,6 +1,6 @@
 using System.Net;
+using MassTransit;
 using Microsoft.EntityFrameworkCore;
-using Scraper.HostedServices;
 using Scraper.Interfaces;
 using Scraper.Services;
 using Shared.Entities;
@@ -14,7 +14,6 @@ IHost host = Host.CreateDefaultBuilder(args)
 
         services.AddScoped<ISearchAuctionsService, SearchAuctionsService>();
         services.AddScoped<ICheckInDbService, CheckInDbService>();
-        services.AddHostedService<Worker>();
 
         services.AddHttpClient<IHttpClientService, HttpClientService>(options =>
         {
@@ -37,6 +36,21 @@ IHost host = Host.CreateDefaultBuilder(args)
             //UseProxy = true,
             UseCookies = false,
             AutomaticDecompression = DecompressionMethods.All
+        });
+
+        services.AddMassTransit(x =>
+        {
+            x.AddConsumer<SearchLinkQueueConsumerService>();
+
+            x.UsingRabbitMq((context, cfg) =>
+            {
+                cfg.ReceiveEndpoint("searchLinks", e =>
+                    {
+                        e.Consumer<SearchLinkQueueConsumerService>(context);
+                        e.ExchangeType = "direct";
+                        e.Durable = false;
+                    });
+            });
         });
 
     })

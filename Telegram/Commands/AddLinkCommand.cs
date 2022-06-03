@@ -2,6 +2,7 @@
 using Redis.OM;
 using Redis.OM.Searching;
 using Shared.Entities;
+using Shared.Interfaces;
 using Telegram.Bot;
 using Telegram.Bot.Types;
 using Telegram.Bot.Types.Enums;
@@ -18,6 +19,7 @@ namespace Telegram.Commands
         private readonly OtoMotoContext _otoMotoContext;
         private readonly IUserService _userService;
         private readonly RedisConnectionProvider _redis;
+        private readonly ISearchLinkService _searchLinkService;
         private readonly IRedisCollection<TelegramCurrentActionRedis> _currentRedisActions;
         private string _link;
         private long _chatId;
@@ -30,12 +32,13 @@ namespace Telegram.Commands
         });
 
         public AddLinkCommand(ITelegramBotClient telegramBotClient, OtoMotoContext otoMotoContext,
-            IUserService userService, RedisConnectionProvider redis, IDefaultCommand defaultCommand)
+            IUserService userService, RedisConnectionProvider redis, IDefaultCommand defaultCommand, ISearchLinkService searchLinkService)
         {
             _telegramBotClient = telegramBotClient;
             _otoMotoContext = otoMotoContext;
             _userService = userService;
             _redis = redis;
+            _searchLinkService = searchLinkService;
             _currentRedisActions = redis.RedisCollection<TelegramCurrentActionRedis>();
         }
 
@@ -69,12 +72,13 @@ namespace Telegram.Commands
             if (update.Type == UpdateType.Message)
             {
                 _chatId = update.Message.Chat.Id;
+                _link = update.Message?.Text?.Trim();
 
                 // Send typing to chat
                 await _telegramBotClient.SendChatActionAsync(_chatId, ChatAction.Typing);
 
                 // Check link from message
-                if (!CheckLink(update))
+                if (!_searchLinkService.Check(_link))
                 {
                     await _telegramBotClient.SendTextMessageAsync(_chatId, "Wyślij poprawny link",
                         replyMarkup: _inlineKeyboard);
@@ -86,7 +90,7 @@ namespace Telegram.Commands
                     return;
 
                 // Set redis value
-                await _redis.Connection.UnlinkAsync($"TelegramCurrentAction:{_chatId}");
+                await _redis.Connection.UnlinkAsync($"{typeof(TelegramCurrentActionRedis)}:{_chatId}");
 
                 await _telegramBotClient.SendTextMessageAsync(_chatId, $"Dodano link:\r\n{_link}",
                     replyMarkup: _inlineKeyboard, disableNotification: false);
@@ -134,25 +138,6 @@ namespace Telegram.Commands
             }
 
             await _otoMotoContext.SaveChangesAsync();
-            return true;
-        }
-
-        private bool CheckLink(Update update)
-        {
-            string linkForCheck = update?.Message?.Text;
-
-            if (string.IsNullOrEmpty(linkForCheck))
-                return false;
-
-            if (!Uri.IsWellFormedUriString(linkForCheck, UriKind.Absolute))
-                return false;
-
-            Uri baseUri = new Uri(linkForCheck);
-
-            if (baseUri.Host != "www.otomoto.pl")
-                return false;
-
-            _link = linkForCheck;
             return true;
         }
     }

@@ -1,4 +1,5 @@
 using Coravel;
+using MassTransit;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
@@ -29,6 +30,11 @@ namespace Scheduler
                 {
                     services.AddDbContext<OtoMotoContext>(options =>
                         options.UseSqlServer(hostContext.Configuration.GetConnectionString("OtoMotoTestConnectionString")));
+
+                    services.AddMassTransit(x =>
+                    {
+                        x.UsingRabbitMq();
+                    });
 
                     services.AddScheduler();
                     services.AddTransient<Worker>();
