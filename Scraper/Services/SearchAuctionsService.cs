@@ -12,19 +12,24 @@ namespace Scraper.Services
 {
     public class SearchAuctionsService : ISearchAuctionsService
     {
-        private SearchLink? _searchLink;
-        private readonly IHttpClientService _httpClientService;
+        private SearchLink _searchLink;
+        private readonly HttpClient _httpClient;
         private readonly ILogger<SearchAuctionsService> _logger;
-        private readonly List<AdLink> _adLinks = new List<AdLink>();
-        private readonly LinkExtensions _extensions = new LinkExtensions();
-        private readonly LinkVariables _variables = new LinkVariables();
-        private readonly SemaphoreSlim _semaphoreSlim = new SemaphoreSlim(10, 10);
+        private readonly List<AdLink> _adLinks = new();
+        private readonly LinkExtensions _extensions = new();
+        private readonly LinkVariables _variables = new();
+        private readonly SemaphoreSlim _semaphoreSlim = new(10, 10);
+        private readonly List<string> _persistedQuerysList = new()
+        {
+            "68185c38c934469b1c93bedd9aec361086b91b10a4efbbae682ee05229899e13",
+            "082392db93e737b5af878c4cdb40cdfeb76a9751bf2b9d8992c2b7c048dd3c61"
+        };
         private int TotalPages { get; set; } = 0;
         private int TotalCount { get; set; } = 0;
 
-        public SearchAuctionsService(IHttpClientService httpClientService, ILogger<SearchAuctionsService> logger)
+        public SearchAuctionsService(IHttpClientFactory httpClientFactory, ILogger<SearchAuctionsService> logger)
         {
-            _httpClientService = httpClientService;
+            _httpClient = httpClientFactory.CreateClient("OtomotoHttpClient");
             _logger = logger;
         }
 
@@ -34,19 +39,29 @@ namespace Scraper.Services
 
             Stopwatch stopwatch = Stopwatch.StartNew();
 
-            string firstLink = GenerateLinkToApi(1);
-
-            if (!string.IsNullOrEmpty(firstLink))
+            while (_persistedQuerysList.Any())
             {
+                int index = new Random().Next(_persistedQuerysList.Count);
+                _extensions.persistedQuery.sha256Hash = _persistedQuerysList[index];
+                _persistedQuerysList.RemoveAt(index);
+
+                string firstLink = GenerateLinkToApi(1);
+
+                if (string.IsNullOrEmpty(firstLink))
+                    break;
+
                 await GetAuctions(firstLink);
 
-                if (TotalPages > 1)
-                {
-                    var links = Enumerable.Range(2, TotalPages - 1).Select(GenerateLinkToApi);
-                    var tasks = links.Select(GetAuctions);
+                if (TotalCount > 0)
+                    break;
+            }
 
-                    await Task.WhenAll(tasks);
-                }
+            if (TotalPages > 1)
+            {
+                var links = Enumerable.Range(2, TotalPages - 1).Select(GenerateLinkToApi);
+                var tasks = links.Select(GetAuctions);
+
+                await Task.WhenAll(tasks);
             }
 
             stopwatch.Stop();
@@ -119,7 +134,10 @@ namespace Scraper.Services
                     await Task.Delay(2000);
                 }
             }
-            catch (Exception) { }
+            catch (Exception e)
+            {
+                _logger.LogError(e.Message);
+            }
             finally
             {
                 _semaphoreSlim.Release();
@@ -130,7 +148,7 @@ namespace Scraper.Services
         {
             try
             {
-                var result = await _httpClientService.Get(link);
+                var result = await _httpClient.GetAsync(link);
 
                 if (result.StatusCode != HttpStatusCode.OK)
                 {
@@ -139,8 +157,9 @@ namespace Scraper.Services
 
                 return result.Content.ReadAsStringAsync().Result;
             }
-            catch (Exception)
+            catch (Exception e)
             {
+                _logger.LogError(e.Message);
                 return string.Empty;
             }
         }
@@ -152,8 +171,8 @@ namespace Scraper.Services
                 try
                 {
                     JObject json = JObject.Parse(httpResponse);
-                    IEnumerable<JToken> pricyProducts = json.SelectTokens("data.advertSearch.edges[*].node");
 
+                    IEnumerable<JToken> pricyProducts = json.SelectTokens("data.advertSearch.edges[*].node");
                     if (pricyProducts.Any())
                     {
                         var a = pricyProducts.Select(x => new { Link = x.SelectToken("url").ToString(), Price = x.SelectToken("price.amount.units").ToString() });
@@ -177,9 +196,16 @@ namespace Scraper.Services
                         _adLinks.AddRange(b);
                         return true;
                     }
+
+                    //var errorMessage = json.SelectToken("errors[0].message");
+                    //if (errorMessage != null && errorMessage.ToString() == "PersistedQueryNotFound")
+                    //{
+                    //    _extensions.persistedQuery.sha256Hash = "082392db93e737b5af878c4cdb40cdfeb76a9751bf2b9d8992c2b7c048dd3c61";
+                    //}
                 }
-                catch (Exception)
+                catch (Exception e)
                 {
+                    _logger.LogError(e.Message);
                     return false;
                 }
             }

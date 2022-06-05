@@ -10,9 +10,9 @@ namespace Scraper.Services
     {
         private readonly IServiceScopeFactory _serviceScopeFactory;
         private readonly ILogger<CheckInDbService> _logger;
-        private readonly SemaphoreSlim _semaphoreSlim = new SemaphoreSlim(100, 100);
-        private readonly List<NewAdMessage> _newAdMessages = new List<NewAdMessage>();
-        private readonly object _locker = new object();
+        private readonly SemaphoreSlim _semaphoreSlim = new(10, 10);
+        private readonly List<NewAdMessage> _newAdMessages = new();
+        private readonly object _locker = new();
         private int NewRecords { get; set; } = 0;
         private int UpdatedPriceRecords { get; set; } = 0;
 
@@ -53,7 +53,8 @@ namespace Scraper.Services
                     {
                         if (adLinkFromDb.Price != adLink.Price)
                         {
-                            _newAdMessages.Add(new NewAdMessage(){ Link = adLink.Link, Price = adLink.Price, PriceBefore = adLinkFromDb.Price });
+                            _newAdMessages.Add(new NewAdMessage()
+                                {Link = adLink.Link, Price = adLink.Price, PriceBefore = adLinkFromDb.Price});
 
                             adLinkFromDb.Price = adLink.Price;
 
@@ -63,7 +64,7 @@ namespace Scraper.Services
                     }
                     else
                     {
-                        _newAdMessages.Add(new NewAdMessage() { Link = adLink.Link, Price = adLink.Price });
+                        _newAdMessages.Add(new NewAdMessage() {Link = adLink.Link, Price = adLink.Price});
 
                         await otoMotoContext.AdLinks.AddAsync(adLink);
 
@@ -74,7 +75,10 @@ namespace Scraper.Services
                     await otoMotoContext.SaveChangesAsync();
                 }
             }
-            catch (Exception) { }
+            catch (Exception e)
+            {
+                _logger.LogError(e.Message);
+            }
             finally
             {
                 _semaphoreSlim.Release();

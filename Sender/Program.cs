@@ -1,4 +1,5 @@
 using MassTransit;
+using Sender;
 using Sender.Interfaces;
 using Sender.Services;
 using Telegram.Bot;
@@ -13,13 +14,13 @@ IHost host = Host.CreateDefaultBuilder(args)
 
         services.AddMassTransit(x =>
         {
-            x.AddConsumer<MessagesToSendQueueConsumerService>();
+            x.AddConsumer<Worker>();
 
             x.UsingRabbitMq((context, cfg) =>
             {
                 cfg.ReceiveEndpoint("messagesToSend", e =>
                 {
-                    e.Consumer<MessagesToSendQueueConsumerService>(context);
+                    e.Consumer<Worker>(context);
                     e.ExchangeType = "direct";
                     e.Durable = false;
                 });

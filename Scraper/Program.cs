@@ -1,6 +1,7 @@
 using System.Net;
 using MassTransit;
 using Microsoft.EntityFrameworkCore;
+using Scraper;
 using Scraper.Interfaces;
 using Scraper.Services;
 using Shared.Entities;
@@ -9,13 +10,13 @@ IHost host = Host.CreateDefaultBuilder(args)
     .ConfigureServices((hostContext, services) =>
     {
         var optionsBuilder = new DbContextOptionsBuilder<OtoMotoContext>();
-        optionsBuilder.UseSqlServer(hostContext.Configuration.GetConnectionString("OtoMotoTestConnectionString"));
+        optionsBuilder.EnableSensitiveDataLogging(true).UseSqlServer(hostContext.Configuration.GetConnectionString("OtoMotoTestConnectionString"));
         services.AddScoped(x => new OtoMotoContext(optionsBuilder.Options));
 
         services.AddScoped<ISearchAuctionsService, SearchAuctionsService>();
         services.AddScoped<ICheckInDbService, CheckInDbService>();
 
-        services.AddHttpClient<IHttpClientService, HttpClientService>(options =>
+        services.AddHttpClient("OtomotoHttpClient", options =>
         {
             options.DefaultRequestHeaders.Add("Cache-Control", "max-age=0");
             options.DefaultRequestHeaders.Add("Sec-Ch-Ua", "\"(Not(A:Brand\";v=\"8\", \"Chromium\";v=\"98\"");
@@ -40,13 +41,13 @@ IHost host = Host.CreateDefaultBuilder(args)
 
         services.AddMassTransit(x =>
         {
-            x.AddConsumer<SearchLinkQueueConsumerService>();
+            x.AddConsumer<Worker>();
 
             x.UsingRabbitMq((context, cfg) =>
             {
                 cfg.ReceiveEndpoint("searchLinks", e =>
                     {
-                        e.Consumer<SearchLinkQueueConsumerService>(context);
+                        e.Consumer<Worker>(context);
                         e.ExchangeType = "direct";
                         e.Durable = false;
                     });
