@@ -18,6 +18,12 @@ IHost host = Host.CreateDefaultBuilder(args)
 
             x.UsingRabbitMq((context, cfg) =>
             {
+                cfg.Host("rabbitmq", "/", h =>
+                {
+                    h.Username("guest");
+                    h.Password("guest");
+                });
+            
                 cfg.ReceiveEndpoint("messagesToSend", e =>
                 {
                     e.Consumer<Worker>(context);

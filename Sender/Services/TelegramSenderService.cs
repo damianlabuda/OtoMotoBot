@@ -9,12 +9,12 @@ namespace Sender.Services
 {
     public class TelegramSenderService : ITelegramSenderService
     {
-        private List<User> _users;
-        private List<NewAdMessage> _newAdMessages;
+        private List<User> _users = new();
+        private List<NewAdMessage> _newAdMessages = new();
         private readonly ILogger<TelegramSenderService> _logger;
         private readonly IServiceScopeFactory _iServiceScopeFactory;
         private readonly SemaphoreSlim _semaphoreSlim = new SemaphoreSlim(10, 10);
-        private int MessagesSendCounter { get; set; } = 0;
+        private int MessagesSendCounter { get; set; }
         private readonly object _obj = new object();
         
         public TelegramSenderService(ILogger<TelegramSenderService> logger, IServiceScopeFactory iServiceScopeFactory)
@@ -55,18 +55,21 @@ namespace Sender.Services
 
                     foreach (NewAdMessage newAdMessage in _newAdMessages)
                     {
-                        string text = newAdMessage.PriceBefore == 0 
-                            ? $"Nowe ogłoszenie\n{newAdMessage.Link}" 
+                        string text = newAdMessage.PriceBefore == 0
+                            ? $"Nowe ogłoszenie\n{newAdMessage.Link}"
                             : $"Zmiana ceny z {newAdMessage.PriceBefore}, na {newAdMessage.Price}\n{newAdMessage.Link}";
 
-                        await telegramClient.SendTextMessageAsync(new ChatId((long)user.TelegramChatId), text);
+                        await telegramClient.SendTextMessageAsync(new ChatId((long) user.TelegramChatId), text);
 
                         lock (_obj)
                             MessagesSendCounter++;
                     }
                 }
             }
-            catch (Exception) { }
+            catch (Exception e)
+            {
+                _logger.LogError(e.Message);
+            }
             finally
             {
                 _semaphoreSlim.Release();

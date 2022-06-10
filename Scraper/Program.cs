@@ -45,12 +45,17 @@ IHost host = Host.CreateDefaultBuilder(args)
 
             x.UsingRabbitMq((context, cfg) =>
             {
+                cfg.Host("rabbitmq", "/", h => {
+                    h.Username("guest");
+                    h.Password("guest");
+                });
+
                 cfg.ReceiveEndpoint("searchLinks", e =>
-                    {
-                        e.Consumer<Worker>(context);
-                        e.ExchangeType = "direct";
-                        e.Durable = false;
-                    });
+                {
+                    e.Consumer<Worker>(context);
+                    e.ExchangeType = "direct";
+                    e.Durable = false;
+                });
             });
         });
 

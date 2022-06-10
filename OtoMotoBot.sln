@@ -9,13 +9,11 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Shared", "Shared\Shared.csp
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Sender", "Sender\Sender.csproj", "{07282C14-6891-4737-BF83-8B19E7639C23}"
 EndProject
-Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "rabbitmq", "rabbitmq", "{2C0F9308-EC30-4050-BD29-6CAC1A4FBD3E}"
-EndProject
-Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "etc", "etc", "{69F61257-9C9C-4423-B35F-D3D6336E205C}"
-EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Scheduler", "Scheduler\Scheduler.csproj", "{25D3EE71-FD6E-4291-9D3D-4D3FBD0684BB}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Telegram", "Telegram\Telegram.csproj", "{A66687B6-7B01-4511-947D-EA544A6A87B8}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Api", "Api\Api.csproj", "{8C5C1B1D-ACAD-448D-82C5-CB769B06E116}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -43,12 +41,15 @@ Global
 		{A66687B6-7B01-4511-947D-EA544A6A87B8}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{A66687B6-7B01-4511-947D-EA544A6A87B8}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{A66687B6-7B01-4511-947D-EA544A6A87B8}.Release|Any CPU.Build.0 = Release|Any CPU
+		{8C5C1B1D-ACAD-448D-82C5-CB769B06E116}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{8C5C1B1D-ACAD-448D-82C5-CB769B06E116}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{8C5C1B1D-ACAD-448D-82C5-CB769B06E116}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{8C5C1B1D-ACAD-448D-82C5-CB769B06E116}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
 	EndGlobalSection
 	GlobalSection(NestedProjects) = preSolution
-		{69F61257-9C9C-4423-B35F-D3D6336E205C} = {2C0F9308-EC30-4050-BD29-6CAC1A4FBD3E}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {06E025D6-F9B5-45D8-AB65-805FC4F015D1}
