@@ -6,6 +6,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Shared.Entities;
 using System.Threading.Tasks;
+using Shared.Models;
 
 namespace Scheduler
 {
@@ -28,17 +29,20 @@ namespace Scheduler
             Host.CreateDefaultBuilder(args)
                 .ConfigureServices((hostContext, services) =>
                 {
+                    var connectionStrings = hostContext.Configuration.GetSection("ConnectionStrings")
+                        .Get<ConnectionStrings>();
+                    
                     services.AddDbContext<OtoMotoContext>(options =>
-                        options.UseSqlServer(hostContext.Configuration.GetConnectionString("OtoMotoTestConnectionString")));
+                        options.UseNpgsql(connectionStrings.OtoMotoDbConnectionString));
 
                     services.AddMassTransit(x =>
                     {
                         x.UsingRabbitMq((context, cfg) =>
                         {
-                            cfg.Host("rabbitmq", "/", h =>
+                            cfg.Host(connectionStrings.RabbitHost, "/", h =>
                             {
-                                h.Username("guest");
-                                h.Password("guest");
+                                h.Username(connectionStrings.RabbitUser);
+                                h.Password(connectionStrings.RabbitPassword);
                             });
                         });
                     });

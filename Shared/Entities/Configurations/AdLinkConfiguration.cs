@@ -17,7 +17,7 @@ namespace Shared.Entities.Configurations
                 .IsRequired();
 
             builder.Property(x => x.CreatedDateTime)
-                .HasDefaultValueSql("getutcdate()");
+                .HasDefaultValueSql("now() at time zone 'utc'");
 
             builder.Property(x => x.LastUpdateDateTime)
                 .ValueGeneratedOnUpdate();

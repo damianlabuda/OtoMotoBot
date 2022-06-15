@@ -58,7 +58,7 @@ namespace Telegram.Services
             var user = await _otoMotoContext.Users
                 .Include(x => x.SearchLinks)
                 .FirstOrDefaultAsync(x => x.TelegramChatId == telegramChatId);
-
+            
             return user;
         }
     }

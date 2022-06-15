@@ -8,6 +8,6 @@ namespace Telegram.Models
         [RedisIdField]
         [Indexed]
         public long TelegramChatId { get; set; }
-        public DateTime Time { get; set; } = DateTime.Now;
+        public DateTime Time { get; set; }
     }
 }

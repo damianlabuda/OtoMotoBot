@@ -5,12 +5,15 @@ using Scraper;
 using Scraper.Interfaces;
 using Scraper.Services;
 using Shared.Entities;
+using Shared.Models;
 
 IHost host = Host.CreateDefaultBuilder(args)
     .ConfigureServices((hostContext, services) =>
     {
+        var connectionStrings = hostContext.Configuration.GetSection("ConnectionStrings").Get<ConnectionStrings>();
+        
         var optionsBuilder = new DbContextOptionsBuilder<OtoMotoContext>();
-        optionsBuilder.EnableSensitiveDataLogging(true).UseSqlServer(hostContext.Configuration.GetConnectionString("OtoMotoTestConnectionString"));
+        optionsBuilder.UseNpgsql(connectionStrings.OtoMotoDbConnectionString);
         services.AddScoped(x => new OtoMotoContext(optionsBuilder.Options));
 
         services.AddScoped<ISearchAuctionsService, SearchAuctionsService>();
@@ -45,9 +48,9 @@ IHost host = Host.CreateDefaultBuilder(args)
 
             x.UsingRabbitMq((context, cfg) =>
             {
-                cfg.Host("rabbitmq", "/", h => {
-                    h.Username("guest");
-                    h.Password("guest");
+                cfg.Host(connectionStrings.RabbitHost, "/", h => {
+                    h.Username(connectionStrings.RabbitUser);
+                    h.Password(connectionStrings.RabbitPassword);
                 });
 
                 cfg.ReceiveEndpoint("searchLinks", e =>

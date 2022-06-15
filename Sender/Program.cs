@@ -2,13 +2,16 @@ using MassTransit;
 using Sender;
 using Sender.Interfaces;
 using Sender.Services;
+using Shared.Models;
 using Telegram.Bot;
 
 IHost host = Host.CreateDefaultBuilder(args)
     .ConfigureServices((hostContext, services) =>
     {
+        var connectionStrings = hostContext.Configuration.GetSection("ConnectionStrings").Get<ConnectionStrings>();
+        
         services.AddHttpClient("TelegramSender")
-            .AddTypedClient<ITelegramBotClient>(client => new TelegramBotClient(hostContext.Configuration.GetConnectionString("TelegramToken"), client));
+            .AddTypedClient<ITelegramBotClient>(client => new TelegramBotClient(connectionStrings.TelegramToken, client));
 
         services.AddScoped<ITelegramSenderService, TelegramSenderService>();
 
@@ -18,10 +21,10 @@ IHost host = Host.CreateDefaultBuilder(args)
 
             x.UsingRabbitMq((context, cfg) =>
             {
-                cfg.Host("rabbitmq", "/", h =>
+                cfg.Host(connectionStrings.RabbitHost, "/", h =>
                 {
-                    h.Username("guest");
-                    h.Password("guest");
+                    h.Username(connectionStrings.RabbitUser);
+                    h.Password(connectionStrings.RabbitPassword);
                 });
             
                 cfg.ReceiveEndpoint("messagesToSend", e =>

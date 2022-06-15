@@ -1,5 +1,6 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using Telegram.Bot.Types;
+using Telegram.Bot.Types.Enums;
 using Telegram.Interfaces;
 
 namespace Telegram.Controllers
@@ -16,7 +17,8 @@ namespace Telegram.Controllers
         [HttpPost]
         public async Task<IActionResult> Post([FromBody] Update update)
         {
-            await _commandExecutorService.Execute(update);
+            if (update.Type == UpdateType.Message || update.Type == UpdateType.CallbackQuery)
+                await _commandExecutorService.Execute(update);
 
             return Ok();
         }

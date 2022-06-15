@@ -1,4 +1,5 @@
-﻿using Telegram.Bot;
+﻿using Shared.Models;
+using Telegram.Bot;
 using Telegram.Bot.Types.Enums;
 
 namespace Telegram.HostedServices
@@ -7,13 +8,13 @@ namespace Telegram.HostedServices
     {
         private readonly ILogger<TelegramWebhookService> _logger;
         private readonly IServiceProvider _serviceProvider;
-        private readonly IConfiguration _configuration;
+        private readonly ConnectionStrings _connectionStrings;
 
         public TelegramWebhookService(ILogger<TelegramWebhookService> logger, IServiceProvider serviceProvider, IConfiguration configuration)
         {
             _logger = logger;
             _serviceProvider = serviceProvider;
-            _configuration = configuration;
+            _connectionStrings = configuration.GetSection("ConnectionStrings").Get<ConnectionStrings>();
         }
 
         public async Task StartAsync(CancellationToken cancellationToken)
@@ -22,7 +23,7 @@ namespace Telegram.HostedServices
             var botClient = scope.ServiceProvider.GetRequiredService<ITelegramBotClient>();
 
             var webhookAddress =
-                $"{_configuration.GetConnectionString("Url")}/api/telegram/update/{_configuration.GetConnectionString("TelegramToken")}";
+                $"{_connectionStrings.UrlTelegramWebHook}/{_connectionStrings.TelegramToken}";
             _logger.LogInformation($"Setting webhook: {webhookAddress}");
 
             await botClient.SetWebhookAsync(url: webhookAddress, allowedUpdates: Array.Empty<UpdateType>(),
