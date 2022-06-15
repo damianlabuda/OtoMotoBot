@@ -1,0 +1,97 @@
+version: '3.8'
+
+services:
+  postgres:
+    image: postgres
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgresData:/var/lib/postgresql/data
+    environment:
+      - POSTGRES_USER=${POSTGRES_USER}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
+  
+  rabbitmq:
+    image: rabbitmq:3-management
+    hostname: rabbitmq
+    ports:
+      - "5672:5672"
+      - "15672:15672"
+  
+  cloudflared:
+    image: cloudflare/cloudflared:2022.5.3
+    container_name: cloudflared
+    command: tunnel --no-autoupdate run --token ${CloudflaredToken}
+    restart: always
+  
+  redis:
+    image: redis/redis-stack
+    hostname: redis
+    container_name: redis
+    ports:
+      - "6379:6379"
+      - "8001:8001"
+    
+  telegram:
+    build: 
+        context: .
+        dockerfile: Telegram/Dockerfile
+    ports:
+      - "7183:7183"
+      - "5183:5183"
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Development
+      - ASPNETCORE_URLS=http://+:5183
+      - ConnectionStrings__OtoMotoDbConnectionString=${OtoMotoDbConnectionString}
+      - ConnectionStrings__TelegramToken=${TelegramToken}
+      - ConnectionStrings__UrlTelegramWebHook=${UrlTelegramWebHook}
+      - ConnectionStrings__RedisConnectionString=${RedisConnectionString}
+    restart: on-failure
+    depends_on:
+        - redis
+        - postgres
+        - cloudflared
+  
+  scheduler:
+    build:
+      context: .
+      dockerfile: Scheduler/Dockerfile
+    environment:
+      - ConnectionStrings__OtoMotoDbConnectionString=${OtoMotoDbConnectionString}
+      - ConnectionStrings__RabbitHost=${RabbitHost}
+      - ConnectionStrings__RabbitUser=${RabbitUser}
+      - ConnectionStrings__RabbitPassword=${RabbitPassword}
+    restart: on-failure
+    depends_on:
+      - rabbitmq
+      - postgres
+  
+  scraper:
+    build:
+      context: .
+      dockerfile: Scraper/Dockerfile
+    environment:
+      - ConnectionStrings__OtoMotoDbConnectionString=${OtoMotoDbConnectionString}
+      - ConnectionStrings__RabbitHost=${RabbitHost}
+      - ConnectionStrings__RabbitUser=${RabbitUser}
+      - ConnectionStrings__RabbitPassword=${RabbitPassword}
+    restart: on-failure
+    depends_on:
+      - rabbitmq
+      - postgres
+  
+  sender:
+    build:
+      context: .
+      dockerfile: Sender/Dockerfile
+    environment:
+      - ConnectionStrings__TelegramToken=${TelegramToken}
+      - ConnectionStrings__RabbitHost=${RabbitHost}
+      - ConnectionStrings__RabbitUser=${RabbitUser}
+      - ConnectionStrings__RabbitPassword=${RabbitPassword}
+    restart: on-failure
+    depends_on:
+      - rabbitmq
+  
+volumes:
+  postgresData:
