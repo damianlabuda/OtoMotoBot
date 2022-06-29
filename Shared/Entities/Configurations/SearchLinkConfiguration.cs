@@ -8,8 +8,7 @@ namespace Shared.Entities.Configurations
         public void Configure(EntityTypeBuilder<SearchLink> builder)
         {
             builder.HasMany(x => x.AdLinks)
-                .WithOne(x => x.SearchLink)
-                .HasForeignKey(x => x.SearchLinkId);
+                .WithMany(x => x.SearchLinks);
 
             builder.Property(x => x.Link)
                 .IsRequired()
@@ -19,10 +18,8 @@ namespace Shared.Entities.Configurations
                 .HasDefaultValue(0);
 
             builder.Property(x => x.CreatedDateTime)
-                .HasDefaultValueSql("now() at time zone 'utc'");
-
-            builder.Property(x => x.LastUpdateDateTime)
-                .ValueGeneratedOnUpdate();
+                // .HasDefaultValueSql("now() at time zone 'utc'");
+                .HasDefaultValueSql("now()");
         }
     }
 }

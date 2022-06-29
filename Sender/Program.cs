@@ -1,7 +1,9 @@
 using MassTransit;
+using Microsoft.EntityFrameworkCore;
 using Sender;
 using Sender.Interfaces;
 using Sender.Services;
+using Shared.Entities;
 using Shared.Models;
 using Telegram.Bot;
 
@@ -9,6 +11,9 @@ IHost host = Host.CreateDefaultBuilder(args)
     .ConfigureServices((hostContext, services) =>
     {
         var connectionStrings = hostContext.Configuration.GetSection("ConnectionStrings").Get<ConnectionStrings>();
+
+        services.AddDbContext<OtoMotoContext>(options =>
+            options.UseNpgsql(connectionStrings.OtoMotoDbConnectionString));
         
         services.AddHttpClient("TelegramSender")
             .AddTypedClient<ITelegramBotClient>(client => new TelegramBotClient(connectionStrings.TelegramToken, client));

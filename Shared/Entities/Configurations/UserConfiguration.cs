@@ -10,11 +10,12 @@ namespace Shared.Entities.Configurations
             builder.HasMany(x => x.SearchLinks)
                 .WithMany(x => x.Users);
 
+            builder.Property(x => x.TelegramChatNotFound)
+                .HasDefaultValue(false);
+            
             builder.Property(x => x.CreatedDateTime)
-                .HasDefaultValueSql("now() at time zone 'utc'");
-
-            builder.Property(x => x.LastUpdateDateTime)
-                .ValueGeneratedOnUpdate();
+                // .HasDefaultValueSql("now() at time zone 'utc'");
+                .HasDefaultValueSql("now()");
         }
     }
 }

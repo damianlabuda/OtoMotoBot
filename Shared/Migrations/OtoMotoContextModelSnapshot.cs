@@ -22,6 +22,21 @@ namespace Shared.Migrations
 
             NpgsqlModelBuilderExtensions.UseIdentityByDefaultColumns(modelBuilder);
 
+            modelBuilder.Entity("AdLinkSearchLink", b =>
+                {
+                    b.Property<long>("AdLinksId")
+                        .HasColumnType("bigint");
+
+                    b.Property<Guid>("SearchLinksId")
+                        .HasColumnType("uuid");
+
+                    b.HasKey("AdLinksId", "SearchLinksId");
+
+                    b.HasIndex("SearchLinksId");
+
+                    b.ToTable("AdLinkSearchLink");
+                });
+
             modelBuilder.Entity("SearchLinkUser", b =>
                 {
                     b.Property<Guid>("SearchLinksId")
@@ -39,31 +54,29 @@ namespace Shared.Migrations
 
             modelBuilder.Entity("Shared.Entities.AdLink", b =>
                 {
-                    b.Property<string>("Link")
-                        .HasMaxLength(2048)
-                        .HasColumnType("character varying(2048)");
+                    b.Property<long>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("bigint");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<long>("Id"));
 
                     b.Property<DateTime>("CreatedDateTime")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("timestamp with time zone")
-                        .HasDefaultValueSql("now() at time zone 'utc'");
+                        .HasDefaultValueSql("now()");
 
-                    b.Property<Guid>("Id")
-                        .HasColumnType("uuid");
+                    b.Property<int>("HowManyTimesHasNotInSearch")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer")
+                        .HasDefaultValue(0);
 
                     b.Property<DateTime?>("LastUpdateDateTime")
-                        .ValueGeneratedOnUpdate()
                         .HasColumnType("timestamp with time zone");
 
                     b.Property<double>("Price")
                         .HasColumnType("double precision");
 
-                    b.Property<Guid>("SearchLinkId")
-                        .HasColumnType("uuid");
-
-                    b.HasKey("Link");
-
-                    b.HasIndex("SearchLinkId");
+                    b.HasKey("Id");
 
                     b.ToTable("AdLinks");
                 });
@@ -77,10 +90,9 @@ namespace Shared.Migrations
                     b.Property<DateTime>("CreatedDateTime")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("timestamp with time zone")
-                        .HasDefaultValueSql("now() at time zone 'utc'");
+                        .HasDefaultValueSql("now()");
 
                     b.Property<DateTime?>("LastUpdateDateTime")
-                        .ValueGeneratedOnUpdate()
                         .HasColumnType("timestamp with time zone");
 
                     b.Property<string>("Link")
@@ -107,14 +119,18 @@ namespace Shared.Migrations
                     b.Property<DateTime>("CreatedDateTime")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("timestamp with time zone")
-                        .HasDefaultValueSql("now() at time zone 'utc'");
+                        .HasDefaultValueSql("now()");
 
                     b.Property<DateTime?>("LastUpdateDateTime")
-                        .ValueGeneratedOnUpdate()
                         .HasColumnType("timestamp with time zone");
 
                     b.Property<long?>("TelegramChatId")
                         .HasColumnType("bigint");
+
+                    b.Property<bool>("TelegramChatNotFound")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("boolean")
+                        .HasDefaultValue(false);
 
                     b.Property<string>("TelegramName")
                         .HasColumnType("text");
@@ -122,6 +138,21 @@ namespace Shared.Migrations
                     b.HasKey("Id");
 
                     b.ToTable("Users");
+                });
+
+            modelBuilder.Entity("AdLinkSearchLink", b =>
+                {
+                    b.HasOne("Shared.Entities.AdLink", null)
+                        .WithMany()
+                        .HasForeignKey("AdLinksId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("Shared.Entities.SearchLink", null)
+                        .WithMany()
+                        .HasForeignKey("SearchLinksId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
                 });
 
             modelBuilder.Entity("SearchLinkUser", b =>
@@ -137,22 +168,6 @@ namespace Shared.Migrations
                         .HasForeignKey("UsersId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
-                });
-
-            modelBuilder.Entity("Shared.Entities.AdLink", b =>
-                {
-                    b.HasOne("Shared.Entities.SearchLink", "SearchLink")
-                        .WithMany("AdLinks")
-                        .HasForeignKey("SearchLinkId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("SearchLink");
-                });
-
-            modelBuilder.Entity("Shared.Entities.SearchLink", b =>
-                {
-                    b.Navigation("AdLinks");
                 });
 #pragma warning restore 612, 618
         }

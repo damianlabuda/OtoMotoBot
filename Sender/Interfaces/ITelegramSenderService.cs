@@ -5,5 +5,5 @@ namespace Sender.Interfaces;
 
 public interface ITelegramSenderService
 {
-    Task SendsAsync(List<User> users, List<NewAdMessage> newAdMessages);
+    Task SendsAsync(List<NewAdMessage> newAdMessages);
 }

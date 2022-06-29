@@ -12,9 +12,8 @@ IHost host = Host.CreateDefaultBuilder(args)
     {
         var connectionStrings = hostContext.Configuration.GetSection("ConnectionStrings").Get<ConnectionStrings>();
         
-        var optionsBuilder = new DbContextOptionsBuilder<OtoMotoContext>();
-        optionsBuilder.UseNpgsql(connectionStrings.OtoMotoDbConnectionString);
-        services.AddScoped(x => new OtoMotoContext(optionsBuilder.Options));
+        services.AddDbContext<OtoMotoContext>(options =>
+            options.UseNpgsql(connectionStrings.OtoMotoDbConnectionString));
 
         services.AddScoped<ISearchAuctionsService, SearchAuctionsService>();
         services.AddScoped<ICheckInDbService, CheckInDbService>();

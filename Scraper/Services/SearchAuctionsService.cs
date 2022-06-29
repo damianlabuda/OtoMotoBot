@@ -35,10 +35,10 @@ namespace Scraper.Services
 
         public async Task<List<AdLink>> Search(SearchLink searchLink)
         {
-            _searchLink = searchLink;
-
             Stopwatch stopwatch = Stopwatch.StartNew();
-
+            
+            _searchLink = searchLink;
+            
             while (_persistedQuerysList.Any())
             {
                 int index = new Random().Next(_persistedQuerysList.Count);
@@ -56,6 +56,9 @@ namespace Scraper.Services
                     break;
             }
 
+            if (_searchLink.SearchCount != 0 && _searchLink.LastUpdateDateTime != null && _searchLink.SearchCount % 10 != 0) 
+                DetermineHowManyPagesCheck();
+            
             if (TotalPages > 1)
             {
                 var links = Enumerable.Range(2, TotalPages - 1).Select(GenerateLinkToApi);
@@ -74,7 +77,7 @@ namespace Scraper.Services
 
             return _adLinks;
         }
-
+        
         private string GenerateLinkToApi(int page)
         {
             if (page == 1)
@@ -95,9 +98,16 @@ namespace Scraper.Services
                     .Select(x => x.Replace("/", "")).Where(x => !string.IsNullOrEmpty(x)).ToArray();
 
                 var linkQueries = HttpUtility.ParseQueryString(baseUri.Query);
-                Filter[] filters = linkQueries.AllKeys
+                Filter[] filtersFromUserLink = linkQueries.AllKeys
                     .Where(x => Regex.IsMatch(x, "(?<=search\\[).*?(?=])"))
                     .Select(x => new Filter() { name = Regex.Match(x, "(?<=search\\[).*?(?=])").Value, value = linkQueries[x] }).ToArray();
+
+                Filter[] sortDesc =
+                {
+                    new() {name = "order", value = "created_at_first:desc"}
+                };
+                
+                var filters = filtersFromUserLink.Concat(sortDesc).ToArray();
 
                 _variables.filters = filters;
                 _variables.searchTerms = searchTerms;
@@ -172,28 +182,29 @@ namespace Scraper.Services
                 {
                     JObject json = JObject.Parse(httpResponse);
 
-                    IEnumerable<JToken> pricyProducts = json.SelectTokens("data.advertSearch.edges[*].node");
-                    if (pricyProducts.Any())
+                    IEnumerable<JToken> adsFromJson = json.SelectTokens("data.advertSearch.edges[*].node");
+                    if (adsFromJson.Any())
                     {
-                        var a = pricyProducts.Select(x => new { Link = x.SelectToken("url").ToString(), Price = x.SelectToken("price.amount.units").ToString() });
-
-                        a = a.Where(x =>
-                            !string.IsNullOrEmpty(x.Link) && double.TryParse(x.Price, out double parsedPrice) && parsedPrice > 0);
-
-                        if (pricyProducts.Count() != a.Count())
+                        var parsedAds = adsFromJson.Select(x => new
                         {
+                            Id = x.SelectToken("id").ToString(), Price = x.SelectToken("price.amount.units").ToString()
+                        }).ToList();
+
+                        // Check is correct ads
+                        parsedAds = parsedAds.Where(x =>
+                            long.TryParse(x.Id, out long parsedId) && parsedId > 0 &&
+                            double.TryParse(x.Price, out double parsedPrice) && parsedPrice > 0).ToList();
+                        
+                        if (adsFromJson.Count() != parsedAds.Count())
                             return false;
-                        }
 
                         if (TotalPages == 0)
-                        {
                             GetAmountPages(json);
-                        }
 
-                        var b = a.Distinct().Select(x => new AdLink()
-                        { Link = x.Link, Price = double.Parse(x.Price), SearchLinkId = _searchLink.Id }).Where(x => x.Link != null);
+                        var adsToAdd = parsedAds.DistinctBy(x => x.Id).Select(x => new AdLink()
+                        { Id = long.Parse(x.Id), Price = double.Parse(x.Price) }).ToList();
 
-                        _adLinks.AddRange(b);
+                        _adLinks.AddRange(adsToAdd);
                         return true;
                     }
 
@@ -236,6 +247,15 @@ namespace Scraper.Services
             {
                 TotalPages = totalPages;
             }
+        }
+        
+        private void DetermineHowManyPagesCheck()
+        {
+            var lastTimeUtcCheck = _searchLink.LastUpdateDateTime;
+            var timeNowUtc = DateTime.UtcNow;
+
+            if (timeNowUtc.AddHours(-1) < lastTimeUtcCheck)
+                TotalPages = (int)Math.Ceiling((double)TotalPages / (double)100 * (double)10); 
         }
     }
 }

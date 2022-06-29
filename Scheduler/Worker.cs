@@ -26,16 +26,31 @@ namespace Scheduler
         {
             try
             {
-                var searchLinks = await _dbOtoMotoContext.SearchLinks.Include(x => x.Users).ToListAsync();
-
-                //Remove search links when there are no users
+                // Get all searchLinks from db
+                var searchLinks =
+                    await _dbOtoMotoContext.SearchLinks
+                        .Include(x => x.Users.Where(u => u.TelegramChatNotFound == false)).ToListAsync();
+                
+                // Remove searchLinks from db when there are no users
                 var searchLinksToRemove = searchLinks.Where(x => x.Users.Count == 0).ToList();
                 if (searchLinksToRemove.Any())
                 {
-                    _dbOtoMotoContext.RemoveRange(searchLinksToRemove);
+                    _dbOtoMotoContext.SearchLinks.RemoveRange(searchLinksToRemove);
+                    await _dbOtoMotoContext.SaveChangesAsync();
+                    
+                    // Remove searchLinks from list when there are no users
                     searchLinks.RemoveAll(x => x.Users.Count == 0);
                 }
-
+                
+                // Remove adLinks that don't have any searchLinks
+                var adLinksToRemove = await _dbOtoMotoContext.AdLinks.Where(x => x.SearchLinks.Count == 0).ToListAsync();
+                if (adLinksToRemove.Any())
+                {
+                    _dbOtoMotoContext.AdLinks.RemoveRange(adLinksToRemove);
+                    await _dbOtoMotoContext.SaveChangesAsync();
+                }
+                
+                // Add all searchLinks to RabbitMq queue
                 foreach (var searchLink in searchLinks)
                 {
                     var searchLinkDto = new SearchLink()
@@ -56,14 +71,10 @@ namespace Scheduler
                         }).ToList()
                     };
 
-                    await _publishEndpoint.Publish<SearchLink>(searchLinkDto);
-
-                    searchLink.SearchCount++;
+                    await _publishEndpoint.Publish<SearchLink>(searchLinkDto, context => context.TimeToLive = TimeSpan.FromMinutes(5));
 
                     _logger.LogInformation($"{DateTime.Now} - Dodano link wyszukiwania do kolejki: {searchLink.Link}");
                 }
-
-                await _dbOtoMotoContext.SaveChangesAsync();
             }
             catch (Exception e)
             {

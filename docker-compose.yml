@@ -5,6 +5,7 @@ services:
     image: postgres
     ports:
       - "5432:5432"
+    restart: on-failure
     volumes:
       - postgresData:/var/lib/postgresql/data
     environment:
@@ -14,6 +15,7 @@ services:
   rabbitmq:
     image: rabbitmq:3-management
     hostname: rabbitmq
+    restart: on-failure
     ports:
       - "5672:5672"
       - "15672:15672"
@@ -22,12 +24,13 @@ services:
     image: cloudflare/cloudflared:2022.5.3
     container_name: cloudflared
     command: tunnel --no-autoupdate run --token ${CloudflaredToken}
-    restart: always
+    restart: on-failure
   
   redis:
     image: redis/redis-stack
     hostname: redis
     container_name: redis
+    restart: on-failure
     ports:
       - "6379:6379"
       - "8001:8001"
@@ -85,6 +88,7 @@ services:
       context: .
       dockerfile: Sender/Dockerfile
     environment:
+      - ConnectionStrings__OtoMotoDbConnectionString=${OtoMotoDbConnectionString}
       - ConnectionStrings__TelegramToken=${TelegramToken}
       - ConnectionStrings__RabbitHost=${RabbitHost}
       - ConnectionStrings__RabbitUser=${RabbitUser}
@@ -92,6 +96,7 @@ services:
     restart: on-failure
     depends_on:
       - rabbitmq
+      - postgres
   
 volumes:
   postgresData:

@@ -1,79 +1,100 @@
 ﻿using System.Diagnostics;
+using Microsoft.EntityFrameworkCore;
 using Sender.Interfaces;
+using Shared.Entities;
 using Shared.Models;
 using Telegram.Bot;
-using Telegram.Bot.Types;
-using User = Shared.Entities.User;
 
 namespace Sender.Services
 {
     public class TelegramSenderService : ITelegramSenderService
     {
-        private List<User> _users = new();
-        private List<NewAdMessage> _newAdMessages = new();
         private readonly ILogger<TelegramSenderService> _logger;
-        private readonly IServiceScopeFactory _iServiceScopeFactory;
-        private readonly SemaphoreSlim _semaphoreSlim = new SemaphoreSlim(10, 10);
+        private readonly ITelegramBotClient _telegramBotClient;
+        private readonly OtoMotoContext _otoMotoContext;
+        private readonly SemaphoreSlim _semaphoreSlim = new(10, 10);
+        private readonly object _obj = new();
+        private readonly List<Guid> _usersTelegramChatNotFound = new();
         private int MessagesSendCounter { get; set; }
-        private readonly object _obj = new object();
+        private int MessagesErrorCounter { get; set; }
         
-        public TelegramSenderService(ILogger<TelegramSenderService> logger, IServiceScopeFactory iServiceScopeFactory)
+        public TelegramSenderService(ILogger<TelegramSenderService> logger, ITelegramBotClient telegramBotClient,
+            OtoMotoContext otoMotoContext)
         {
             _logger = logger;
-            _iServiceScopeFactory = iServiceScopeFactory;
+            _telegramBotClient = telegramBotClient;
+            _otoMotoContext = otoMotoContext;
         }
 
-        public async Task SendsAsync(List<User> users, List<NewAdMessage> newAdMessages)
+        public async Task SendsAsync(List<NewAdMessage> newAdMessages)
         {
-            _users = users;
-            _newAdMessages = newAdMessages;
-
             Stopwatch stopwatch = Stopwatch.StartNew();
 
-            var task = _users.Select(SendMessagesAsync);
+            var task = newAdMessages.Select(SendMessagesAsync);
 
             await Task.WhenAll(task);
+
+            await SetInfoAboutUserValidityTelegramChat();
 
             stopwatch.Stop();
 
             _logger.LogInformation($"{DateTime.Now} - Wysłano: {MessagesSendCounter} nowych wiadomości," +
-                                   $" z {_newAdMessages.Count * _users.Count} zaplanowanych," +
-                                   $" dla {_users.Count} użytkowników," +
+                                    $" z {MessagesSendCounter + MessagesErrorCounter} zaplanowanych," +
                                    $" czas {stopwatch.Elapsed}");
         }
-
-        private async Task SendMessagesAsync(User user)
+        
+        private async Task SendMessagesAsync(NewAdMessage newAdMessage)
         {
             await _semaphoreSlim.WaitAsync();
 
+            var users = newAdMessage.Users;
+
             try
             {
-                if (user.TelegramChatId != null)
+                foreach (var user in users)
                 {
-                    using var scope = _iServiceScopeFactory.CreateScope();
-                    var telegramClient = scope.ServiceProvider.GetRequiredService<ITelegramBotClient>();
-
-                    foreach (NewAdMessage newAdMessage in _newAdMessages)
+                    try
                     {
                         string text = newAdMessage.PriceBefore == 0
-                            ? $"Nowe ogłoszenie\n{newAdMessage.Link}"
-                            : $"Zmiana ceny z {newAdMessage.PriceBefore}, na {newAdMessage.Price}\n{newAdMessage.Link}";
+                            ? $"Nowe ogłoszenie, cena: {newAdMessage.Price}\nhttps://www.otomoto.pl/{newAdMessage.Id}"
+                            : $"Zmiana ceny z {newAdMessage.PriceBefore}, na {newAdMessage.Price}\nhttps://www.otomoto.pl/{newAdMessage.Id}";
 
-                        await telegramClient.SendTextMessageAsync(new ChatId((long) user.TelegramChatId), text);
+                        await _telegramBotClient.SendTextMessageAsync(user.TelegramChatId, text);
 
-                        lock (_obj)
+                        lock (_obj) 
                             MessagesSendCounter++;
                     }
+                    catch (Exception e)
+                    {
+                        _logger.LogError($"Error message: {e.Message}, User Id: {user.Id}");
+
+                        lock (_obj)
+                        {
+                            MessagesErrorCounter++;
+
+                            if (e.Message == "Bad Request: chat not found" || e.Message == "Forbidden: bot was blocked by the user")
+                            {
+                                _usersTelegramChatNotFound.Add(user.Id);
+                            }
+                        }
+                    }
                 }
-            }
-            catch (Exception e)
-            {
-                _logger.LogError(e.Message);
             }
             finally
             {
                 _semaphoreSlim.Release();
             }
         }
+        
+        private async Task SetInfoAboutUserValidityTelegramChat()
+        {
+            if (_usersTelegramChatNotFound.Any())
+            {
+                var users = await _otoMotoContext.Users.Where(x => _usersTelegramChatNotFound.Distinct().Contains(x.Id))
+                    .ToListAsync();
+                users.ForEach(x => x.TelegramChatNotFound = true);
+                await _otoMotoContext.SaveChangesAsync();
+            }
+        }
     }
-} 
+}

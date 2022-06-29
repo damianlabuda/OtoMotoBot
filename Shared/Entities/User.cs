@@ -6,6 +6,7 @@
         public virtual List<SearchLink> SearchLinks { get; set; }
         public long? TelegramChatId { get; set; }
         public string? TelegramName { get; set; }
+        public bool TelegramChatNotFound { get; set; }
         public DateTime CreatedDateTime { get; set; }
         public DateTime? LastUpdateDateTime { get; set; }
     }

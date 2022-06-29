@@ -32,14 +32,13 @@ namespace Scraper
 
                 if (adLinks.Any())
                 {
-                    var newAdMessages = await _checkInDbService.Check(adLinks);
+                    var newAdMessages = await _checkInDbService.Check(adLinks, searchLink);
 
                     if (newAdMessages.Any() && searchLink.SearchCount > 0)
                     {
                         MessagesToSent messagesToSent = new MessagesToSent()
                         {
-                            NewAdMessages = newAdMessages,
-                            Users = searchLink.Users
+                            NewAdMessages = newAdMessages
                         };
 
                         await _publishEndpoint.Publish<MessagesToSent>(messagesToSent);

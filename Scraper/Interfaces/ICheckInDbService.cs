@@ -5,5 +5,5 @@ namespace Scraper.Interfaces;
 
 public interface ICheckInDbService
 {
-    Task<List<NewAdMessage>> Check(List<AdLink> adLinks);
+    Task<List<NewAdMessage>> Check(List<AdLink> adLinks, SearchLink searchLink);
 }

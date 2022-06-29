@@ -21,7 +21,7 @@ namespace Sender
             {
                 var messagesToSent = context.Message;
 
-                await _telegramSenderService.SendsAsync(messagesToSent.Users, messagesToSent.NewAdMessages);
+                await _telegramSenderService.SendsAsync(messagesToSent.NewAdMessages);
             }
             catch (Exception e)
             {

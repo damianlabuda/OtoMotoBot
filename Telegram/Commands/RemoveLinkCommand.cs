@@ -38,6 +38,20 @@ namespace Telegram.Commands
 
             await _otoMotoContext.SaveChangesAsync();
 
+            var searchLinksToRemove = await _otoMotoContext.SearchLinks.Where(x => !x.Users.Any()).ToListAsync();
+            if (searchLinksToRemove.Any())
+            {
+                _otoMotoContext.SearchLinks.RemoveRange(searchLinksToRemove);
+                await _otoMotoContext.SaveChangesAsync();
+            }
+
+            var adLinksToRemove = await _otoMotoContext.AdLinks.Where(x => x.SearchLinks.Count == 0).ToListAsync();
+            if (adLinksToRemove.Any())
+            {
+                _otoMotoContext.AdLinks.RemoveRange(adLinksToRemove);
+                await _otoMotoContext.SaveChangesAsync();
+            }
+
             await _telegramBotClient.AnswerCallbackQueryAsync(update.CallbackQuery.Id, "Usunieto link");
 
             // Show default view

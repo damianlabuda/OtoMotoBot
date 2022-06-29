@@ -2,11 +2,10 @@
 {
     public class AdLink
     {
-        public Guid Id { get; set; }
-        public string Link { get; set; }
+        public long Id { get; set; }
         public double Price { get; set; }
-        public virtual SearchLink SearchLink { get; set; }
-        public Guid SearchLinkId { get; set; }
+        public virtual List<SearchLink> SearchLinks { get; set; }
+        public int HowManyTimesHasNotInSearch { get; set; }
         public DateTime CreatedDateTime { get; set; }
         public DateTime? LastUpdateDateTime { get; set; }
     }
