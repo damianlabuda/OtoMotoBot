@@ -2,5 +2,5 @@
 
 public interface ISearchLinkService
 {
-    bool Check(string searchLink);
+    string GenerateLinkToApi(string searchLink, int page, string persistedQuery);
 }

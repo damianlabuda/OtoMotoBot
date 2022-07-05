@@ -78,7 +78,7 @@ namespace Telegram.Commands
                 await _telegramBotClient.SendChatActionAsync(_chatId, ChatAction.Typing);
 
                 // Check link from message
-                if (!_searchLinkService.Check(_link))
+                if (string.IsNullOrEmpty(_searchLinkService.GenerateLinkToApi(_link, 0, String.Empty)))
                 {
                     await _telegramBotClient.SendTextMessageAsync(_chatId, "Wyślij poprawny link",
                         replyMarkup: _inlineKeyboard);

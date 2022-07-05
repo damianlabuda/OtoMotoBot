@@ -2,7 +2,7 @@
 {
     public class LinkVariables
     {
-        public string categoryId { get; set; } = "29";
+        public string categoryId { get; set; }
         public string click2BuyExperimentId { get; set; } = "CARS-30865";
         public string click2BuyExperimentVariant { get; set; } = "b";
         public Filter[] filters { get; set; }

@@ -5,7 +5,9 @@ using Scraper;
 using Scraper.Interfaces;
 using Scraper.Services;
 using Shared.Entities;
+using Shared.Interfaces;
 using Shared.Models;
+using Shared.Services;
 
 IHost host = Host.CreateDefaultBuilder(args)
     .ConfigureServices((hostContext, services) =>
@@ -17,6 +19,7 @@ IHost host = Host.CreateDefaultBuilder(args)
 
         services.AddScoped<ISearchAuctionsService, SearchAuctionsService>();
         services.AddScoped<ICheckInDbService, CheckInDbService>();
+        services.AddScoped<ISearchLinkService, SearchLinkService>();
 
         services.AddHttpClient("OtomotoHttpClient", options =>
         {

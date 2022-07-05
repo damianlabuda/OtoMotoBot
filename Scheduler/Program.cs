@@ -20,12 +20,6 @@ namespace Scheduler
             {
                 // Adds a job to check the auction every 5 minutes
                 sheduler.Schedule<Worker>().EveryFiveMinutes();
-                
-                // Adds a task to check if the auction exists or if the price has changed
-                
-                
-                // var jobShedule = sheduler.Schedule<Worker>();
-                // jobShedule.EveryFiveMinutes();
             });
 
             await host.RunAsync();
