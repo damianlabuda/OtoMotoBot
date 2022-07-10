@@ -17,6 +17,9 @@ namespace Shared.Entities.Configurations
             builder.Property(x => x.SearchCount)
                 .HasDefaultValue(0);
 
+            builder.Property(x => x.AdLinksCount)
+                .HasDefaultValue(0);
+
             builder.Property(x => x.CreatedDateTime)
                 // .HasDefaultValueSql("now() at time zone 'utc'");
                 .HasDefaultValueSql("now()");

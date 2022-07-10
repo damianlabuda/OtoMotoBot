@@ -26,57 +26,46 @@ namespace Sender.Services
             _otoMotoContext = otoMotoContext;
         }
 
-        public async Task SendsAsync(List<NewAdMessage> newAdMessages)
+        public async Task SendsAsync(TelegramMessagesToSend telegramMessagesToSend)
         {
             Stopwatch stopwatch = Stopwatch.StartNew();
+            
+            var tasks = telegramMessagesToSend.Users.Select(x => SendMessagesAsync(telegramMessagesToSend.Message, x));
 
-            var task = newAdMessages.Select(SendMessagesAsync);
-
-            await Task.WhenAll(task);
-
+            await Task.WhenAll(tasks);
+            
             await SetInfoAboutUserValidityTelegramChat();
-
+            
             stopwatch.Stop();
-
+            
             _logger.LogInformation($"{DateTime.Now} - Wysłano: {MessagesSendCounter} nowych wiadomości," +
                                     $" z {MessagesSendCounter + MessagesErrorCounter} zaplanowanych," +
                                    $" czas {stopwatch.Elapsed}");
         }
-        
-        private async Task SendMessagesAsync(NewAdMessage newAdMessage)
+
+        private async Task SendMessagesAsync(string message, User user)
         {
             await _semaphoreSlim.WaitAsync();
-
-            var users = newAdMessage.Users;
-
+            
             try
             {
-                foreach (var user in users)
+                await _telegramBotClient.SendTextMessageAsync(user.TelegramChatId, message);
+
+                lock (_obj)
+                    MessagesSendCounter++;
+            }
+            catch (Exception e)
+            {
+                _logger.LogError($"Error message: {e.Message}, User Id: {user.Id}");
+
+                lock (_obj)
                 {
-                    try
+                    MessagesErrorCounter++;
+
+                    if (e.Message == "Bad Request: chat not found" ||
+                        e.Message == "Forbidden: bot was blocked by the user")
                     {
-                        string text = newAdMessage.PriceBefore == 0
-                            ? $"Nowe ogłoszenie, cena: {newAdMessage.Price}\nhttps://www.otomoto.pl/{newAdMessage.Id}"
-                            : $"Zmiana ceny z {newAdMessage.PriceBefore}, na {newAdMessage.Price}\nhttps://www.otomoto.pl/{newAdMessage.Id}";
-
-                        await _telegramBotClient.SendTextMessageAsync(user.TelegramChatId, text);
-
-                        lock (_obj) 
-                            MessagesSendCounter++;
-                    }
-                    catch (Exception e)
-                    {
-                        _logger.LogError($"Error message: {e.Message}, User Id: {user.Id}");
-
-                        lock (_obj)
-                        {
-                            MessagesErrorCounter++;
-
-                            if (e.Message == "Bad Request: chat not found" || e.Message == "Forbidden: bot was blocked by the user")
-                            {
-                                _usersTelegramChatNotFound.Add(user.Id);
-                            }
-                        }
+                        _usersTelegramChatNotFound.Add(user.Id);
                     }
                 }
             }

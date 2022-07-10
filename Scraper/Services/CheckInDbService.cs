@@ -11,10 +11,10 @@ namespace Scraper.Services
         private readonly OtoMotoContext _otoMotoContext;
         private readonly ILogger<CheckInDbService> _logger;
         private readonly List<NewAdMessage> _newAdMessages = new();
-        private int NewRecords { get; set; } = 0;
-        private int UpdatedPriceRecords { get; set; } = 0;
-        private int DeletedRecords { get; set; } = 0;
-        private int CheckedRecords { get; set; } = 0;
+        private int NewRecords { get; set; }
+        private int UpdatedPriceRecords { get; set; }
+        private int DeletedRecords { get; set; }
+        private int CheckedRecords { get; set; }
         private SearchLink _searchLink = new();
 
         public CheckInDbService(OtoMotoContext otoMotoContext, ILogger<CheckInDbService> logger)
@@ -35,17 +35,20 @@ namespace Scraper.Services
                 if (_searchLink.SearchCount != 0 && _searchLink.SearchCount % 10 == 0)
                 {
                     await CheckAllAdsInDbForExistAndPrice(adLinks);
+                    _searchLink.AdLinksCount = adLinks.Count();
                 }
                 else
                 {
                     await CheckNewAds(adLinks);
                 }
 
+                if (_searchLink.SearchCount == 0)
+                    _searchLink.AdLinksCount = adLinks.Count();
+                
                 if (CheckedRecords > 0)
-                {
                     _searchLink.SearchCount++;
-                    await _otoMotoContext.SaveChangesAsync();
-                }
+
+                await _otoMotoContext.SaveChangesAsync();
             }
 
             stopwatch.Stop();

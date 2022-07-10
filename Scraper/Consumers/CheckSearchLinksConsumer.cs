@@ -3,16 +3,16 @@ using Scraper.Interfaces;
 using Shared.Entities;
 using Shared.Models;
 
-namespace Scraper
+namespace Scraper.Consumers
 {
-    public class Worker : IConsumer<SearchLink>
+    public class CheckSearchLinksConsumer : IConsumer<SearchLink>
     {
-        private readonly ILogger<Worker> _logger;
+        private readonly ILogger<CheckSearchLinksConsumer> _logger;
         private readonly ISearchAuctionsService _searchAuctionsService;
         private readonly ICheckInDbService _checkInDbService;
         private readonly IPublishEndpoint _publishEndpoint;
 
-        public Worker(ILogger<Worker> logger,
+        public CheckSearchLinksConsumer(ILogger<CheckSearchLinksConsumer> logger,
             ISearchAuctionsService searchAuctionsService, ICheckInDbService checkInDbService,
             IPublishEndpoint publishEndpoint)
         {
@@ -36,12 +36,20 @@ namespace Scraper
 
                     if (newAdMessages.Any() && searchLink.SearchCount > 0)
                     {
-                        MessagesToSent messagesToSent = new MessagesToSent()
+                        foreach (var newAdMessage in newAdMessages)
                         {
-                            NewAdMessages = newAdMessages
-                        };
+                            string text = newAdMessage.PriceBefore == 0
+                                ? $"Nowe ogłoszenie, cena: {newAdMessage.Price}\nhttps://www.otomoto.pl/{newAdMessage.Id}"
+                                : $"Zmiana ceny z {newAdMessage.PriceBefore}, na {newAdMessage.Price}\nhttps://www.otomoto.pl/{newAdMessage.Id}";
 
-                        await _publishEndpoint.Publish<MessagesToSent>(messagesToSent);
+                            var telegramMessagesToSend = new TelegramMessagesToSend()
+                            {
+                                Message = text,
+                                Users = newAdMessage.Users
+                            };
+
+                            await _publishEndpoint.Publish<TelegramMessagesToSend>(telegramMessagesToSend);
+                        }
                     }
                 }
             }

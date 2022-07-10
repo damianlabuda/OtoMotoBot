@@ -1,3 +1,4 @@
+using MassTransit;
 using Microsoft.EntityFrameworkCore;
 using Redis.OM;
 using Shared.Entities;
@@ -35,6 +36,18 @@ builder.Services.AddHostedService<RedisIndexCreationService>();
 
 builder.Services.AddDbContext<OtoMotoContext>(options =>
     options.UseNpgsql(connectionStrings.OtoMotoDbConnectionString));
+
+builder.Services.AddMassTransit(x =>
+{
+    x.UsingRabbitMq((context, cfg) =>
+    {
+        cfg.Host(connectionStrings.RabbitHost, "/", h =>
+        {
+            h.Username(connectionStrings.RabbitUser);
+            h.Password(connectionStrings.RabbitPassword);
+        });
+    });
+});
 
 var app = builder.Build();
 

@@ -1,7 +1,7 @@
 using System.Net;
 using MassTransit;
 using Microsoft.EntityFrameworkCore;
-using Scraper;
+using Scraper.Consumers;
 using Scraper.Interfaces;
 using Scraper.Services;
 using Shared.Entities;
@@ -20,7 +20,8 @@ IHost host = Host.CreateDefaultBuilder(args)
         services.AddScoped<ISearchAuctionsService, SearchAuctionsService>();
         services.AddScoped<ICheckInDbService, CheckInDbService>();
         services.AddScoped<ISearchLinkService, SearchLinkService>();
-
+        services.AddScoped<IAdLinksService, AdLinksService>();
+        
         services.AddHttpClient("OtomotoHttpClient", options =>
         {
             options.DefaultRequestHeaders.Add("Cache-Control", "max-age=0");
@@ -46,7 +47,8 @@ IHost host = Host.CreateDefaultBuilder(args)
 
         services.AddMassTransit(x =>
         {
-            x.AddConsumer<Worker>();
+            x.AddConsumer<CheckSearchLinksConsumer>();
+            x.AddConsumer<CheckAdCountConsumer>();
 
             x.UsingRabbitMq((context, cfg) =>
             {
@@ -55,9 +57,16 @@ IHost host = Host.CreateDefaultBuilder(args)
                     h.Password(connectionStrings.RabbitPassword);
                 });
 
-                cfg.ReceiveEndpoint("searchLinks", e =>
+                cfg.ReceiveEndpoint("checkSearchLinks", e =>
                 {
-                    e.Consumer<Worker>(context);
+                    e.Consumer<CheckSearchLinksConsumer>(context);
+                    e.ExchangeType = "direct";
+                    e.Durable = false;
+                });
+                
+                cfg.ReceiveEndpoint("checkAdCount", e =>
+                {
+                    e.Consumer<CheckAdCountConsumer>(context);
                     e.ExchangeType = "direct";
                     e.Durable = false;
                 });

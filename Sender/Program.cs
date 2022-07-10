@@ -1,6 +1,7 @@
 using MassTransit;
 using Microsoft.EntityFrameworkCore;
 using Sender;
+using Sender.Consumers;
 using Sender.Interfaces;
 using Sender.Services;
 using Shared.Entities;
@@ -22,7 +23,7 @@ IHost host = Host.CreateDefaultBuilder(args)
 
         services.AddMassTransit(x =>
         {
-            x.AddConsumer<Worker>();
+            x.AddConsumer<TelegramMessagesConsumer>();
 
             x.UsingRabbitMq((context, cfg) =>
             {
@@ -32,9 +33,9 @@ IHost host = Host.CreateDefaultBuilder(args)
                     h.Password(connectionStrings.RabbitPassword);
                 });
             
-                cfg.ReceiveEndpoint("messagesToSend", e =>
+                cfg.ReceiveEndpoint("telegramMessagesToSend", e =>
                 {
-                    e.Consumer<Worker>(context);
+                    e.Consumer<TelegramMessagesConsumer>(context);
                     e.ExchangeType = "direct";
                     e.Durable = false;
                 });

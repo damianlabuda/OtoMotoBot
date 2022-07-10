@@ -61,6 +61,7 @@ namespace Scheduler
                         LastUpdateDateTime = searchLink.LastUpdateDateTime,
                         Link = searchLink.Link,
                         SearchCount = searchLink.SearchCount,
+                        AdLinksCount = searchLink.AdLinksCount,
                         Users = searchLink.Users.Select(x => new User()
                         {
                             CreatedDateTime = x.CreatedDateTime,
@@ -71,7 +72,8 @@ namespace Scheduler
                         }).ToList()
                     };
 
-                    await _publishEndpoint.Publish<SearchLink>(searchLinkDto, context => context.TimeToLive = TimeSpan.FromMinutes(5));
+                    await _publishEndpoint.Publish<SearchLink>(searchLinkDto,
+                        context => context.TimeToLive = TimeSpan.FromMinutes(5));
 
                     _logger.LogInformation($"{DateTime.Now} - Dodano link wyszukiwania do kolejki: {searchLink.Link}");
                 }
