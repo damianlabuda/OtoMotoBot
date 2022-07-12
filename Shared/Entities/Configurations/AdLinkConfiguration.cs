@@ -7,7 +7,7 @@ namespace Shared.Entities.Configurations
     {
         public void Configure(EntityTypeBuilder<AdLink> builder)
         {
-            builder.Property(x => x.Price)
+            builder.Property(x => x.Prices)
                 .IsRequired();
 
             builder.Property(x => x.HowManyTimesHasNotInSearch)

@@ -49,11 +49,15 @@ services:
       - ConnectionStrings__TelegramToken=${TelegramToken}
       - ConnectionStrings__UrlTelegramWebHook=${UrlTelegramWebHook}
       - ConnectionStrings__RedisConnectionString=${RedisConnectionString}
+      - ConnectionStrings__RabbitHost=${RabbitHost}
+      - ConnectionStrings__RabbitUser=${RabbitUser}
+      - ConnectionStrings__RabbitPassword=${RabbitPassword}
     restart: on-failure
     depends_on:
         - redis
         - postgres
         - cloudflared
+        - rabbitmq
   
   scheduler:
     build:

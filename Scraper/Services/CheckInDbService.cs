@@ -65,8 +65,10 @@ namespace Scraper.Services
 
         private async Task CheckAllAdsInDbForExistAndPrice(List<AdLink> adLinks)
         {
-            var allAdLinksForSearchLink = await _otoMotoContext.AdLinks.Include(x => x.SearchLinks)
-                .ThenInclude(x => x.Users).Where(x => x.SearchLinks.Contains(_searchLink))
+            var allAdLinksForSearchLink = await _otoMotoContext.AdLinks
+                .Include(x => x.SearchLinks).ThenInclude(x => x.Users)
+                .Include(x => x.Prices)
+                .Where(x => x.SearchLinks.Contains(_searchLink))
                 .ToListAsync();
 
             if (!allAdLinksForSearchLink.Any())
@@ -85,7 +87,10 @@ namespace Scraper.Services
                 if (adlinkFromSearch == null)
                     continue;
 
-                if (adLinkFromDb.Price != adlinkFromSearch.Price)
+                if (adLinkFromDb.Prices.OrderByDescending(s => s.CreatedDateTime).Select(s => s.Price).FirstOrDefault()
+                    != adlinkFromSearch.Prices.Select(p => p.Price).FirstOrDefault()
+                    || adLinkFromDb.Prices.OrderByDescending(s => s.CreatedDateTime).Select(c => c.Currency).FirstOrDefault() 
+                    != adlinkFromSearch.Prices.Select(c => c.Currency).FirstOrDefault())
                 {
                     var users = adLinkFromDb.SearchLinks
                         .SelectMany(x => x.Users)
@@ -99,12 +104,14 @@ namespace Scraper.Services
                     _newAdMessages.Add(new NewAdMessage()
                     {
                         Id = adlinkFromSearch.Id,
-                        Price = adlinkFromSearch.Price,
-                        PriceBefore = adLinkFromDb.Price,
+                        Price = adlinkFromSearch.Prices.Select(p => p.Price).FirstOrDefault(),
+                        Currency = adlinkFromSearch.Prices.Select(c => c.Currency).FirstOrDefault(),
+                        PriceBefore = adLinkFromDb.Prices.OrderByDescending(s => s.CreatedDateTime).Select(p => p.Price).FirstOrDefault(),
+                        CurrencyBefore = adLinkFromDb.Prices.OrderByDescending(s => s.CreatedDateTime).Select(c => c.Currency).FirstOrDefault(),
                         Users = users
                     });
 
-                    adLinkFromDb.Price = adlinkFromSearch.Price;
+                    adLinkFromDb.Prices.AddRange(adlinkFromSearch.Prices);
 
                     UpdatedPriceRecords++;
                 }
@@ -127,13 +134,17 @@ namespace Scraper.Services
             var adLinksFromDb = await _otoMotoContext.AdLinks.Include(x => x.SearchLinks)
                 .Where(t => idsForSearchInDb.Contains(t.Id)).ToListAsync();
 
-            var adLinksForCheckExistSearchLinks =
-                adLinksFromDb.Where(x => adLinks.Select(s => s.Id).Contains(x.Id)).ToList();
-            if (adLinksForCheckExistSearchLinks.Any())
+            // var adLinksForCheckExistSearchLinks =
+            //     adLinksFromDb.Where(x => adLinks.Select(s => s.Id).Contains(x.Id)).ToList();
+            // if (adLinksForCheckExistSearchLinks.Any())
+            if (adLinksFromDb.Any())
             {
-                var adLinksForAddSearchLink = adLinksForCheckExistSearchLinks
-                    .Where(x => !x.SearchLinks.Select(s => s.Id).Contains(_searchLink.Id)).ToList();
+                // var adLinksForAddSearchLink = adLinksForCheckExistSearchLinks
+                //     .Where(x => !x.SearchLinks.Select(s => s.Id).Contains(_searchLink.Id)).ToList();
 
+                var adLinksForAddSearchLink = adLinksFromDb
+                    .Where(x => !x.SearchLinks.Select(s => s.Id).Contains(_searchLink.Id)).ToList();
+                
                 if (adLinksForAddSearchLink.Any())
                 {
                     adLinksForAddSearchLink.ForEach(x => x.SearchLinks.Add(_searchLink));
@@ -141,12 +152,13 @@ namespace Scraper.Services
                     var newAdMessages = adLinksForAddSearchLink.Select(x => new NewAdMessage()
                     {
                         Id = x.Id,
-                        Price = x.Price,
-                        Users = _searchLink.Users.Select(x => new User()
+                        Price = x.Prices.Select(p => p.Price).FirstOrDefault(),
+                        Currency = x.Prices.Select(c => c.Currency).FirstOrDefault(),
+                        Users = _searchLink.Users.Select(u => new User()
                         {
-                            Id = x.Id,
-                            TelegramChatId = x.TelegramChatId,
-                            TelegramName = x.TelegramName
+                            Id = u.Id,
+                            TelegramChatId = u.TelegramChatId,
+                            TelegramName = u.TelegramName
                         }).ToList()
                         
                     }).ToList();
@@ -165,12 +177,13 @@ namespace Scraper.Services
                 var newAdMessages = newAdLinksToAdd.Select(x => new NewAdMessage()
                 {
                     Id = x.Id,
-                    Price = x.Price,
-                    Users = _searchLink.Users.Select(x => new User()
+                    Price = x.Prices.Select(p => p.Price).FirstOrDefault(),
+                    Currency = x.Prices.Select(c => c.Currency).FirstOrDefault(),
+                    Users = _searchLink.Users.Select(u => new User()
                     {
-                        Id = x.Id,
-                        TelegramChatId = x.TelegramChatId,
-                        TelegramName = x.TelegramName
+                        Id = u.Id,
+                        TelegramChatId = u.TelegramChatId,
+                        TelegramName = u.TelegramName
                     }).ToList()
                 }).ToList();
                 _newAdMessages.AddRange(newAdMessages);

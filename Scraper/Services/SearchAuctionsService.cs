@@ -145,13 +145,16 @@ namespace Scraper.Services
                     {
                         var parsedAds = adsFromJson.Select(x => new
                         {
-                            Id = x.SelectToken("id").ToString(), Price = x.SelectToken("price.amount.units").ToString()
+                            Id = x.SelectToken("id").ToString(), 
+                            Price = x.SelectToken("price.amount.units").ToString(),
+                            Currency = x.SelectToken("price.amount.currencyCode").ToString()
                         }).ToList();
 
                         // Check is correct ads
                         parsedAds = parsedAds.Where(x =>
                             long.TryParse(x.Id, out long parsedId) && parsedId > 0 &&
-                            double.TryParse(x.Price, out double parsedPrice) && parsedPrice > 0).ToList();
+                            double.TryParse(x.Price, out double parsedPrice) && parsedPrice > 0 &&
+                            !string.IsNullOrEmpty(x.Currency)).ToList();
                         
                         if (adsFromJson.Count() != parsedAds.Count())
                             return false;
@@ -159,13 +162,25 @@ namespace Scraper.Services
                         if (TotalPages == 0)
                             GetAmountPages(json);
 
-                        var adsToAdd = parsedAds.DistinctBy(x => x.Id).Select(x => new AdLink()
-                        { Id = long.Parse(x.Id), Price = double.Parse(x.Price) }).ToList();
+                        var adsToAdd = parsedAds.DistinctBy(x => x.Id).Select(x => 
+                            new AdLink()
+                            {
+                                Id = long.Parse(x.Id), 
+                                Prices = new List<AdPrice>()
+                                {
+                                    new AdPrice()
+                                    {
+                                        Price = double.Parse(x.Price),
+                                        Currency = x.Currency
+                                    }
+                                }
+                            }).ToList();
 
                         _adLinks.AddRange(adsToAdd);
                         return true;
                     }
-
+                    
+                    // Price = double.Parse(x.Price)
                     //var errorMessage = json.SelectToken("errors[0].message");
                     //if (errorMessage != null && errorMessage.ToString() == "PersistedQueryNotFound")
                     //{
