@@ -1,4 +1,5 @@
 ﻿using System.Diagnostics;
+using MassTransit.Audit;
 using Microsoft.EntityFrameworkCore;
 using Scraper.Interfaces;
 using Shared.Entities;
@@ -34,7 +35,11 @@ namespace Scraper.Services
             {
                 if (_searchLink.SearchCount != 0 && _searchLink.SearchCount % 10 == 0)
                 {
-                    await CheckAllAdsInDbForExistAndPrice(adLinks);
+                    var adLinksForAddToDb = await CheckAdsExistAndPrice(adLinks);
+
+                    if (adLinksForAddToDb.Any())
+                        await CheckNewAds(adLinksForAddToDb);
+                    
                     _searchLink.AdLinksCount = adLinks.Count();
                 }
                 else
@@ -63,7 +68,7 @@ namespace Scraper.Services
             return _newAdMessages;
         }
 
-        private async Task CheckAllAdsInDbForExistAndPrice(List<AdLink> adLinks)
+        private async Task<List<AdLink>> CheckAdsExistAndPrice(List<AdLink> adLinks)
         {
             var allAdLinksForSearchLink = await _otoMotoContext.AdLinks
                 .Include(x => x.SearchLinks).ThenInclude(x => x.Users)
@@ -72,7 +77,10 @@ namespace Scraper.Services
                 .ToListAsync();
 
             if (!allAdLinksForSearchLink.Any())
-                return;
+            {
+                CheckedRecords = adLinks.Count();
+                return adLinks;
+            }
 
             foreach (var adLinkFromDb in allAdLinksForSearchLink)
             {
@@ -108,6 +116,15 @@ namespace Scraper.Services
                         Currency = adlinkFromSearch.Prices.Select(c => c.Currency).FirstOrDefault(),
                         PriceBefore = adLinkFromDb.Prices.OrderByDescending(s => s.CreatedDateTime).Select(p => p.Price).FirstOrDefault(),
                         CurrencyBefore = adLinkFromDb.Prices.OrderByDescending(s => s.CreatedDateTime).Select(c => c.Currency).FirstOrDefault(),
+                        City = !string.IsNullOrEmpty(adlinkFromSearch.City) ? adlinkFromSearch.City : "Miasto",
+                        Region = !string.IsNullOrEmpty(adlinkFromSearch.Region) ? adlinkFromSearch.Region : "Województwo",
+                        Make = !string.IsNullOrEmpty(adlinkFromSearch.Make) ? adlinkFromSearch.Make : "Marka",
+                        Model = !string.IsNullOrEmpty(adlinkFromSearch.Model) ? adlinkFromSearch.Model : "Model",
+                        Gearbox = !string.IsNullOrEmpty(adlinkFromSearch.Gearbox) ? adlinkFromSearch.Gearbox : "Skrzynia",
+                        Year = adlinkFromSearch.Year,
+                        Mileage = adlinkFromSearch.Mileage,
+                        EngineCapacity = adlinkFromSearch.EngineCapacity,
+                        FuelType = !string.IsNullOrEmpty(adlinkFromSearch.FuelType) ? adlinkFromSearch.FuelType : "Paliwo",
                         Users = users
                     });
 
@@ -122,9 +139,11 @@ namespace Scraper.Services
             _otoMotoContext.AdLinks.RemoveRange(
                 allAdLinksForSearchLink.Where(x => x.HowManyTimesHasNotInSearch >= 3));
             DeletedRecords = allAdLinksForSearchLink.Count(x => x.HowManyTimesHasNotInSearch >= 3);
-            CheckedRecords = allAdLinksForSearchLink.Count();
+            CheckedRecords = adLinks.Count();
             
             await _otoMotoContext.SaveChangesAsync();
+
+            return adLinks.ExceptBy(allAdLinksForSearchLink.Select(x => x.Id), i => i.Id).ToList();
         }
 
         private async Task CheckNewAds(List<AdLink> adLinks)
@@ -134,14 +153,8 @@ namespace Scraper.Services
             var adLinksFromDb = await _otoMotoContext.AdLinks.Include(x => x.SearchLinks)
                 .Where(t => idsForSearchInDb.Contains(t.Id)).ToListAsync();
 
-            // var adLinksForCheckExistSearchLinks =
-            //     adLinksFromDb.Where(x => adLinks.Select(s => s.Id).Contains(x.Id)).ToList();
-            // if (adLinksForCheckExistSearchLinks.Any())
             if (adLinksFromDb.Any())
             {
-                // var adLinksForAddSearchLink = adLinksForCheckExistSearchLinks
-                //     .Where(x => !x.SearchLinks.Select(s => s.Id).Contains(_searchLink.Id)).ToList();
-
                 var adLinksForAddSearchLink = adLinksFromDb
                     .Where(x => !x.SearchLinks.Select(s => s.Id).Contains(_searchLink.Id)).ToList();
                 
@@ -154,6 +167,15 @@ namespace Scraper.Services
                         Id = x.Id,
                         Price = x.Prices.Select(p => p.Price).FirstOrDefault(),
                         Currency = x.Prices.Select(c => c.Currency).FirstOrDefault(),
+                        City = !string.IsNullOrEmpty(x.City) ? x.City : "Miasto",
+                        Region = !string.IsNullOrEmpty(x.Region) ? x.Region : "Województwo",
+                        Make = !string.IsNullOrEmpty(x.Make) ? x.Make : "Marka",
+                        Model = !string.IsNullOrEmpty(x.Model) ? x.Model : "Model",
+                        Gearbox = !string.IsNullOrEmpty(x.Gearbox) ? x.Gearbox : "Skrzynia",
+                        Year = x.Year,
+                        Mileage = x.Mileage,
+                        EngineCapacity = x.EngineCapacity,
+                        FuelType = !string.IsNullOrEmpty(x.FuelType) ? x.FuelType : "Paliwo",
                         Users = _searchLink.Users.Select(u => new User()
                         {
                             Id = u.Id,
@@ -179,6 +201,15 @@ namespace Scraper.Services
                     Id = x.Id,
                     Price = x.Prices.Select(p => p.Price).FirstOrDefault(),
                     Currency = x.Prices.Select(c => c.Currency).FirstOrDefault(),
+                    City = !string.IsNullOrEmpty(x.City) ? x.City : "Miasto",
+                    Region = !string.IsNullOrEmpty(x.Region) ? x.Region : "Województwo",
+                    Make = !string.IsNullOrEmpty(x.Make) ? x.Make : "Marka",
+                    Model = !string.IsNullOrEmpty(x.Model) ? x.Model : "Model",
+                    Gearbox = !string.IsNullOrEmpty(x.Gearbox) ? x.Gearbox : "Skrzynia",
+                    Year = x.Year,
+                    Mileage = x.Mileage,
+                    EngineCapacity = x.EngineCapacity,
+                    FuelType = !string.IsNullOrEmpty(x.FuelType) ? x.FuelType : "Paliwo",
                     Users = _searchLink.Users.Select(u => new User()
                     {
                         Id = u.Id,
@@ -191,7 +222,8 @@ namespace Scraper.Services
                 NewRecords += newAdLinksToAdd.Count;
             }
 
-            CheckedRecords = idsForSearchInDb.Count();
+            if (CheckedRecords == 0)
+                CheckedRecords = idsForSearchInDb.Count();
             
             await _otoMotoContext.SaveChangesAsync();
         }

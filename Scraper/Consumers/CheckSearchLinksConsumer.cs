@@ -39,8 +39,12 @@ namespace Scraper.Consumers
                         foreach (var newAdMessage in newAdMessages)
                         {
                             string text = newAdMessage.PriceBefore == 0
-                                ? $"Nowe ogłoszenie, cena: {newAdMessage.Price} {newAdMessage.Currency}\nhttps://www.otomoto.pl/{newAdMessage.Id}"
-                                : $"Zmiana ceny z {newAdMessage.PriceBefore} {newAdMessage.CurrencyBefore}, na {newAdMessage.Price} {newAdMessage.Currency}\nhttps://www.otomoto.pl/{newAdMessage.Id}";
+                                ? $"Nowe ogłoszenie, cena: {newAdMessage.Price} {newAdMessage.Currency}" +
+                                  $"\n{newAdMessage.Make} - {newAdMessage.Model} | {newAdMessage.Year} rok | {newAdMessage.Mileage} km | {newAdMessage.EngineCapacity} cm - {newAdMessage.FuelType} | {newAdMessage.Gearbox} | {newAdMessage.City} - {newAdMessage.Region}" +
+                                  $"\nhttps://www.otomoto.pl/{newAdMessage.Id}"
+                                : $"Zmiana ceny z {newAdMessage.PriceBefore} {newAdMessage.CurrencyBefore}, na {newAdMessage.Price} {newAdMessage.Currency}" +
+                                  $"\n{newAdMessage.Make} - {newAdMessage.Model} | {newAdMessage.Year} rok | {newAdMessage.Mileage} km | {newAdMessage.EngineCapacity} cm - {newAdMessage.FuelType} | {newAdMessage.Gearbox} | {newAdMessage.City} - {newAdMessage.Region}" +
+                                  $"\nhttps://www.otomoto.pl/{newAdMessage.Id}";
 
                             var telegramMessagesToSend = new TelegramMessagesToSend()
                             {

@@ -60,10 +60,25 @@ namespace Shared.Migrations
 
                     NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<long>("Id"));
 
+                    b.Property<int>("CategoryId")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("City")
+                        .HasColumnType("text");
+
                     b.Property<DateTime>("CreatedDateTime")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("timestamp with time zone")
                         .HasDefaultValueSql("now()");
+
+                    b.Property<int>("EngineCapacity")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("FuelType")
+                        .HasColumnType("text");
+
+                    b.Property<string>("Gearbox")
+                        .HasColumnType("text");
 
                     b.Property<int>("HowManyTimesHasNotInSearch")
                         .ValueGeneratedOnAdd()
@@ -73,12 +88,55 @@ namespace Shared.Migrations
                     b.Property<DateTime?>("LastUpdateDateTime")
                         .HasColumnType("timestamp with time zone");
 
+                    b.Property<string>("Make")
+                        .HasColumnType("text");
+
+                    b.Property<int>("Mileage")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("Model")
+                        .HasColumnType("text");
+
+                    b.Property<string>("Region")
+                        .HasColumnType("text");
+
+                    b.Property<string>("Thumbnail")
+                        .HasColumnType("text");
+
+                    b.Property<int>("Year")
+                        .HasColumnType("integer");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("AdLinks");
+                });
+
+            modelBuilder.Entity("Shared.Entities.AdPrice", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<long>("AdLinkId")
+                        .HasColumnType("bigint");
+
+                    b.Property<DateTime>("CreatedDateTime")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("timestamp with time zone")
+                        .HasDefaultValueSql("now()");
+
+                    b.Property<string>("Currency")
+                        .IsRequired()
+                        .HasColumnType("text");
+
                     b.Property<double>("Price")
                         .HasColumnType("double precision");
 
                     b.HasKey("Id");
 
-                    b.ToTable("AdLinks");
+                    b.HasIndex("AdLinkId");
+
+                    b.ToTable("AdPrices");
                 });
 
             modelBuilder.Entity("Shared.Entities.SearchLink", b =>
@@ -173,6 +231,22 @@ namespace Shared.Migrations
                         .HasForeignKey("UsersId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
+                });
+
+            modelBuilder.Entity("Shared.Entities.AdPrice", b =>
+                {
+                    b.HasOne("Shared.Entities.AdLink", "AdLink")
+                        .WithMany("Prices")
+                        .HasForeignKey("AdLinkId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("AdLink");
+                });
+
+            modelBuilder.Entity("Shared.Entities.AdLink", b =>
+                {
+                    b.Navigation("Prices");
                 });
 #pragma warning restore 612, 618
         }

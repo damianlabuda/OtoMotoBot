@@ -11,7 +11,7 @@
         public bool includeRatings { get; set; } = false;
         public bool includeSortOptions { get; set; } = true;
         public int page { get; set; }
-        public string[] parameters { get; set; } = new string[] { "make", "offer_type", "year", "mileage", "engine_capacity", "fuel_type" };
+        public string[] parameters { get; set; } = new string[] { "make", "model", "gearbox", "offer_type", "year", "mileage", "engine_capacity", "fuel_type" };
         public string[] searchTerms { get; set; }
     }
 
