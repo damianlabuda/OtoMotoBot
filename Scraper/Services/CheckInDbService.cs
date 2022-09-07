@@ -1,5 +1,4 @@
 ﻿using System.Diagnostics;
-using MassTransit.Audit;
 using Microsoft.EntityFrameworkCore;
 using Scraper.Interfaces;
 using Shared.Entities;
@@ -151,6 +150,7 @@ namespace Scraper.Services
             var idsForSearchInDb = adLinks.Select(x => x.Id).Distinct().ToList();
 
             var adLinksFromDb = await _otoMotoContext.AdLinks.Include(x => x.SearchLinks)
+                .Include(x => x.Prices)
                 .Where(t => idsForSearchInDb.Contains(t.Id)).ToListAsync();
 
             if (adLinksFromDb.Any())
@@ -190,7 +190,8 @@ namespace Scraper.Services
                 }
             }
 
-            var newAdLinksToAdd = adLinks.Where(x => !adLinksFromDb.Select(s => s.Id).Contains(x.Id)).ToList();
+            var newAdLinksToAdd = adLinks.Where(x => !adLinksFromDb.Select(s => s.Id).Contains(x.Id))
+                .DistinctBy(x => x.Id).ToList();
             if (newAdLinksToAdd.Any())
             {
                 newAdLinksToAdd.ForEach(x => x.SearchLinks = new List<SearchLink> {_searchLink});
