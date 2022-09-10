@@ -19,8 +19,9 @@ namespace Scraper.Services
         {
             "68185c38c934469b1c93bedd9aec361086b91b10a4efbbae682ee05229899e13",
             "082392db93e737b5af878c4cdb40cdfeb76a9751bf2b9d8992c2b7c048dd3c61",
-            "f6a92bbfc960d6112b6fe7092fc78a9f79b39b719d75ba62667c78e405c0a35b",
-            "209ab0eefbf8afc152b9cdddaf3aad5d9bbb1dffa22ee2bcc670f1233fc07196"
+            "b4e62cefd1ec13a056a991aa274fe0d0d32e473f9040807fb1f5a79fdb5c3fcf",
+            "f6a92bbfc960d6112b6fe7092fc78a9f79b39b719d75ba62667c78e405c0a35b", 
+            "209ab0eefbf8afc152b9cdddaf3aad5d9bbb1dffa22ee2bcc670f1233fc07196" // 10.09.2022 - nie działa na dzien dzisiejszy
         };
         private string PersistedQuery { get; set; }
         private int TotalPages { get; set; }

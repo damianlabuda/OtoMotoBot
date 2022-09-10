@@ -69,6 +69,12 @@ namespace Telegram.Services
                     await ExecuteAsync(CommandNames.RemoveLinkCommand, update);
                     return;
                 }
+
+                if (update.CallbackQuery.Data.Contains(CommandNames.ShowPriceHistoryCommand))
+                {
+                    await ExecuteAsync(CommandNames.ShowPriceHistoryCommand, update);
+                    return;
+                }
             }
         }
 

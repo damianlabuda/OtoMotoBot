@@ -7,5 +7,6 @@
         public const string ShowMyLinksCommand = "show-links";
         public const string RemoveLinkCommand = "remove-link";
         public const string OptionsLinkCommand = "options-link";
+        public const string ShowPriceHistoryCommand = "show-price";
     }
 }

@@ -26,6 +26,7 @@ builder.Services.AddScoped<IBaseCommand, AddLinkCommand>();
 builder.Services.AddScoped<IBaseCommand, ShowMyLinksCommand>();
 builder.Services.AddScoped<IBaseCommand, OptionsLinkCommand>();
 builder.Services.AddScoped<IBaseCommand, RemoveLinkCommand>();
+builder.Services.AddScoped<IBaseCommand, ShowPriceHistoryCommand>();
 
 builder.Services.AddHostedService<TelegramWebhookService>();
 builder.Services.AddHttpClient("tgwebhook").AddTypedClient<ITelegramBotClient>(httpClient =>

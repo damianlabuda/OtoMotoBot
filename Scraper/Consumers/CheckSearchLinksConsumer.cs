@@ -2,6 +2,7 @@
 using Scraper.Interfaces;
 using Shared.Entities;
 using Shared.Models;
+using Telegram.Bot.Types.ReplyMarkups;
 
 namespace Scraper.Consumers
 {
@@ -46,9 +47,14 @@ namespace Scraper.Consumers
                                   $"\n{newAdMessage.Make} - {newAdMessage.Model} | {newAdMessage.Year} rok | {newAdMessage.Mileage} km | {newAdMessage.EngineCapacity} cm - {newAdMessage.FuelType} | {newAdMessage.Gearbox} | {newAdMessage.City} - {newAdMessage.Region}" +
                                   $"\nhttps://www.otomoto.pl/{newAdMessage.Id}";
 
+                                List<InlineKeyboardButton>? inlineKeyboard = newAdMessage.PriceBefore == 0
+                                ? new List<InlineKeyboardButton>()
+                                : new List<InlineKeyboardButton>(){new ("Pokaż historie zmian ceny") { CallbackData = $"show-price{newAdMessage.Id}"}};
+                            
                             var telegramMessagesToSend = new TelegramMessagesToSend()
                             {
                                 Message = text,
+                                InlineKeyboard = inlineKeyboard,
                                 Users = newAdMessage.Users
                             };
 

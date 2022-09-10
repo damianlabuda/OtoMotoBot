@@ -4,6 +4,7 @@ using Sender.Interfaces;
 using Shared.Entities;
 using Shared.Models;
 using Telegram.Bot;
+using Telegram.Bot.Types.ReplyMarkups;
 
 namespace Sender.Services
 {
@@ -29,8 +30,9 @@ namespace Sender.Services
         public async Task SendsAsync(TelegramMessagesToSend telegramMessagesToSend)
         {
             Stopwatch stopwatch = Stopwatch.StartNew();
-            
-            var tasks = telegramMessagesToSend.Users.Select(x => SendMessagesAsync(telegramMessagesToSend.Message, x));
+
+            var tasks = telegramMessagesToSend.Users.Select(x =>
+                SendMessagesAsync(telegramMessagesToSend.Message, telegramMessagesToSend.InlineKeyboard, x));
 
             await Task.WhenAll(tasks);
             
@@ -43,13 +45,14 @@ namespace Sender.Services
                                    $" czas {stopwatch.Elapsed}");
         }
 
-        private async Task SendMessagesAsync(string message, User user)
+        private async Task SendMessagesAsync(string message, List<InlineKeyboardButton> inlineKeyboardButtons, User user)
         {
             await _semaphoreSlim.WaitAsync();
             
             try
             {
-                await _telegramBotClient.SendTextMessageAsync(user.TelegramChatId, message);
+                await _telegramBotClient.SendTextMessageAsync(user.TelegramChatId, message,
+                    replyMarkup: new InlineKeyboardMarkup(inlineKeyboardButtons));
 
                 lock (_obj)
                     MessagesSendCounter++;
